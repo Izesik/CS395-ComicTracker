@@ -17,11 +17,11 @@ interface ComicDao {
 
     // Get all series from the database
     @Query("SELECT * FROM SeriesEntity")
-    suspend fun getAllSeries(): Flow<List<SeriesEntity>>
+    fun getAllSeries(): Flow<List<SeriesEntity>>
 
     // Get all comic issues for a specific series
     @Query("SELECT * FROM ComicIssueEntity WHERE seriesId = :seriesId")
-    suspend fun getComicIssuesForSeries(seriesId: Long): Flow<List<ComicIssueEntity>>
+    fun getComicIssuesForSeries(seriesId: Long): Flow<List<ComicIssueEntity>>
 
     // Update the read status of a comic issue
     @Query("UPDATE ComicIssueEntity SET isRead = :isRead WHERE id = :issueId")

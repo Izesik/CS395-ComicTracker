@@ -2,6 +2,7 @@ package com.moravian.comictracker.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
@@ -10,7 +11,8 @@ import androidx.room.PrimaryKey
         parentColumns = ["id"],
         childColumns = ["seriesId"],
         onDelete = ForeignKey.CASCADE
-    )]
+    )],
+    indices = [Index(value = ["seriesId"])]
 )
 data class ComicIssueEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
