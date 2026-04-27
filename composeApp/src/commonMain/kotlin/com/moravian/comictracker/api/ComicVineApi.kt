@@ -11,8 +11,6 @@ import kotlinx.serialization.json.Json
 
 private const val BASE_URL = "https://comicvine.gamespot.com/api"
 
-private const val API_KEY = "c0ed94038cbd3659d6ee3e22772e094ca67c24a2"
-
 class ComicVineApi {
     private val client: HttpClient = createHttpClient {
         install(ContentNegotiation) {
@@ -23,10 +21,9 @@ class ComicVineApi {
         }
     }
 
-    // Appends the required auth + format params to every request
     private fun HttpRequestBuilder.defaults() {
         parameter("format", "json")
-        parameter("api_key", API_KEY)
+        parameter("api_key", ApiConfig.API_KEY)
     }
 
     //searches volumes or issues based on whatever keyword the user types in

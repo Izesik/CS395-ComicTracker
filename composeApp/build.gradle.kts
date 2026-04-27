@@ -1,5 +1,30 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val localProps = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
+
+val apiKey: String = localProps.getProperty("API_KEY") ?: ""
+
+// Claude wrote ts, I couldn't figure out how to do secrets correctly so ggs
+val generateApiConfig by tasks.registering {
+    val outputDir = layout.buildDirectory.dir("generated/kotlin/commonMain")
+    inputs.property("apiKey", apiKey)
+    outputs.dir(outputDir)
+    doLast {
+        val key = inputs.properties["apiKey"] as String
+        val file = outputDir.get().file("com/moravian/comictracker/network/ApiConfig.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            "package com.moravian.comictracker.network\n\n" +
+            "internal object ApiConfig {\n" +
+            "    const val API_KEY = \"$key\"\n" +
+            "}\n"
+        )
+    }
+}
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -33,6 +58,9 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
+        }
+        commonMain {
+            kotlin.srcDir(generateApiConfig)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -74,6 +102,7 @@ dependencies {
 android {
     namespace = "com.moravian.comictracker"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+    buildFeatures { buildConfig = true }
 
     defaultConfig {
         applicationId = "com.moravian.comictracker"
@@ -81,6 +110,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "API_KEY", "\"${localProps["API_KEY"]}\"")
     }
     packaging {
         resources {
