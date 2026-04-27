@@ -31,7 +31,8 @@ data class ComicVineVolume(
     val description: String? = null,
     val image: ComicVineImage? = null,
     val publisher: ComicVinePublisherRef? = null,
-    val characters: List<ComicVineCharacterRef> = emptyList()
+    val characters: List<ComicVineCharacterRef> = emptyList(),
+    @SerialName("content_rating") val contentRating: String? = null
 )
 
 @Serializable
@@ -41,9 +42,12 @@ data class ComicVineIssue(
     @SerialName("issue_number") val issueNumber: String,
     @SerialName("cover_date") val coverDate: String? = null,
     @SerialName("store_date") val storeDate: String? = null,
+    val deck: String? = null,
     val description: String? = null,
     val image: ComicVineImage? = null,
-    val volume: ComicVineVolumeRef? = null
+    val volume: ComicVineVolumeRef? = null,
+    val characters: List<ComicVineCharacterRef> = emptyList(),
+    @SerialName("content_rating") val contentRating: String? = null
 )
 
 @Serializable

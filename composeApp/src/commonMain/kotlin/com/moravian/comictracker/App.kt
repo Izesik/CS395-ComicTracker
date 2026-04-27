@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.moravian.comictracker.ui.screens.ComicDetailScreen
 import com.moravian.comictracker.ui.screens.HomeScreen
+import com.moravian.comictracker.ui.screens.IssueDetailScreen
 
 sealed class Screen(val route: String, val label: String) {
     object Home : Screen("home", "Home")
@@ -31,7 +32,7 @@ sealed class Screen(val route: String, val label: String) {
     object Search : Screen("search", "Search")
 }
 
-private const val ROUTE_COMIC_DETAIL = "comic_detail/{volumeId}"
+private val detailRoutes = listOf("comic_detail", "issue_detail")
 
 @Composable
 fun App() {
@@ -41,7 +42,7 @@ fun App() {
         val currentDestination = navBackStackEntry?.destination
 
         val navItems = listOf(Screen.Home, Screen.MyCollection, Screen.Search)
-        val showBottomBar = currentDestination?.route?.startsWith("comic_detail") != true
+        val showBottomBar = detailRoutes.none { currentDestination?.route?.startsWith(it) == true }
 
         Scaffold(
             bottomBar = {
@@ -83,20 +84,29 @@ fun App() {
             ) {
                 composable(Screen.Home.route) {
                     HomeScreen(
-                        onComicClick = { volumeId ->
-                            navController.navigate("comic_detail/$volumeId")
-                        }
+                        onVolumeClick = { navController.navigate("comic_detail/$it") },
+                        onIssueClick = { navController.navigate("issue_detail/$it") }
                     )
                 }
                 composable(Screen.MyCollection.route) { /* TODO */ }
                 composable(Screen.Search.route) { /* TODO */ }
                 composable(
-                    route = ROUTE_COMIC_DETAIL,
+                    route = "comic_detail/{volumeId}",
                     arguments = listOf(navArgument("volumeId") { type = NavType.IntType })
                 ) { backStackEntry ->
                     val volumeId = backStackEntry.arguments?.getInt("volumeId") ?: return@composable
                     ComicDetailScreen(
                         volumeId = volumeId,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                composable(
+                    route = "issue_detail/{issueId}",
+                    arguments = listOf(navArgument("issueId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val issueId = backStackEntry.arguments?.getInt("issueId") ?: return@composable
+                    IssueDetailScreen(
+                        issueId = issueId,
                         onBack = { navController.popBackStack() }
                     )
                 }
