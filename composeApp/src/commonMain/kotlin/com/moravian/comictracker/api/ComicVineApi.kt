@@ -46,7 +46,7 @@ class ComicVineApi {
     suspend fun getVolume(id: Int): ComicVineSingleResponse<ComicVineVolume> =
         client.get("$BASE_URL/volume/4050-$id/") {
             defaults()
-            parameter("field_list", "id,name,start_year,count_of_issues,description,image,publisher")
+            parameter("field_list", "id,name,start_year,count_of_issues,deck,description,image,publisher,characters")
         }.body()
 
     //pulls all the issues that belong to one volume

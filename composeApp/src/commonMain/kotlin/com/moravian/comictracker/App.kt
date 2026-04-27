@@ -16,10 +16,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.moravian.comictracker.ui.screens.ComicDetailScreen
 import com.moravian.comictracker.ui.screens.HomeScreen
 
 sealed class Screen(val route: String, val label: String) {
@@ -27,6 +30,8 @@ sealed class Screen(val route: String, val label: String) {
     object MyCollection : Screen("my_collection", "My Collection")
     object Search : Screen("search", "Search")
 }
+
+private const val ROUTE_COMIC_DETAIL = "comic_detail/{volumeId}"
 
 @Composable
 fun App() {
@@ -36,34 +41,37 @@ fun App() {
         val currentDestination = navBackStackEntry?.destination
 
         val navItems = listOf(Screen.Home, Screen.MyCollection, Screen.Search)
+        val showBottomBar = currentDestination?.route?.startsWith("comic_detail") != true
 
         Scaffold(
             bottomBar = {
-                NavigationBar {
-                    navItems.forEach { screen ->
-                        NavigationBarItem(
-                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                if (showBottomBar) {
+                    NavigationBar {
+                        navItems.forEach { screen ->
+                            NavigationBarItem(
+                                selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                onClick = {
+                                    navController.navigate(screen.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = when (screen) {
-                                        Screen.Home -> Icons.Filled.Home
-                                        Screen.MyCollection -> Icons.Filled.Star
-                                        Screen.Search -> Icons.Filled.Search
-                                    },
-                                    contentDescription = screen.label
-                                )
-                            },
-                            label = { Text(screen.label) }
-                        )
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = when (screen) {
+                                            Screen.Home -> Icons.Filled.Home
+                                            Screen.MyCollection -> Icons.Filled.Star
+                                            Screen.Search -> Icons.Filled.Search
+                                        },
+                                        contentDescription = screen.label
+                                    )
+                                },
+                                label = { Text(screen.label) }
+                            )
+                        }
                     }
                 }
             }
@@ -73,9 +81,25 @@ fun App() {
                 startDestination = Screen.Home.route,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable(Screen.Home.route) { HomeScreen() }
+                composable(Screen.Home.route) {
+                    HomeScreen(
+                        onComicClick = { volumeId ->
+                            navController.navigate("comic_detail/$volumeId")
+                        }
+                    )
+                }
                 composable(Screen.MyCollection.route) { /* TODO */ }
                 composable(Screen.Search.route) { /* TODO */ }
+                composable(
+                    route = ROUTE_COMIC_DETAIL,
+                    arguments = listOf(navArgument("volumeId") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val volumeId = backStackEntry.arguments?.getInt("volumeId") ?: return@composable
+                    ComicDetailScreen(
+                        volumeId = volumeId,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +31,10 @@ import com.moravian.comictracker.ui.viewmodels.HomeUiState
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
+fun HomeScreen(
+    onComicClick: (Int) -> Unit = {},
+    viewModel: HomeViewModel = viewModel()
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -64,7 +68,7 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items((uiState as HomeUiState.Success).volumes) { volume ->
-                        VolumeCoverCard(volume)
+                        VolumeCoverCard(volume, onClick = { onComicClick(volume.id) })
                     }
                 }
             }
@@ -73,8 +77,8 @@ fun HomeScreen(viewModel: HomeViewModel = viewModel()) {
 }
 
 @Composable
-private fun VolumeCoverCard(volume: ComicVineVolume) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun VolumeCoverCard(volume: ComicVineVolume, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Column {
             AsyncImage(
                 model = volume.image?.mediumUrl,
