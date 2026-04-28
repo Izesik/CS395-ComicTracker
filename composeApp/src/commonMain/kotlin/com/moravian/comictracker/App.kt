@@ -22,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.moravian.comictracker.ui.screens.CollectionScreen
 import com.moravian.comictracker.ui.screens.ComicDetailScreen
 import com.moravian.comictracker.ui.screens.HomeScreen
 import com.moravian.comictracker.ui.screens.IssueDetailScreen
@@ -88,7 +89,7 @@ fun App() {
                         onIssueClick = { navController.navigate("issue_detail/$it") }
                     )
                 }
-                composable(Screen.MyCollection.route) { /* TODO */ }
+                composable(Screen.MyCollection.route) { CollectionScreen() }
                 composable(Screen.Search.route) { /* TODO */ }
                 composable(
                     route = "comic_detail/{volumeId}",
