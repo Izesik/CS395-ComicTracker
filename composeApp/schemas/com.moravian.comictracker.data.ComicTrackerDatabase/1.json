@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "6f04388af7b7b4f7a4c6431e84e15f21",
+    "identityHash": "291731b76ee7bc89acc323fc914d9f9c",
     "entities": [
       {
         "tableName": "SeriesEntity",
@@ -80,17 +80,6 @@
             "id"
           ]
         },
-        "indices": [
-          {
-            "name": "index_ComicIssueEntity_seriesId",
-            "unique": false,
-            "columnNames": [
-              "seriesId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_ComicIssueEntity_seriesId` ON `${TABLE_NAME}` (`seriesId`)"
-          }
-        ],
         "foreignKeys": [
           {
             "table": "SeriesEntity",
@@ -132,7 +121,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6f04388af7b7b4f7a4c6431e84e15f21')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '291731b76ee7bc89acc323fc914d9f9c')"
     ]
   }
 }
