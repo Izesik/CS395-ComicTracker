@@ -7,7 +7,13 @@ import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.data.getComicTrackerDatabase
 import platform.Foundation.NSHomeDirectory
 
-fun MainViewController() = ComposeUIViewController { App(getComicTrackerDatabase(getDatabaseBuilder())) }
+fun MainViewController() = ComposeUIViewController {
+    App(
+        getComicTrackerDatabase(getDatabaseBuilder())
+    )
+}.apply {
+    this.view.setNeedsLayout()
+}
 
 
 fun getDatabaseBuilder(): RoomDatabase.Builder<ComicTrackerDatabase> {

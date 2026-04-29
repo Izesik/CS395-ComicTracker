@@ -1,9 +1,10 @@
-package com.moravian.comictracker.ui.screens
+ package com.moravian.comictracker.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -198,7 +199,7 @@ private fun DetailContent(volume: ComicVineVolume, onBack: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(ScreenBackground),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(volume.characters.take(20)) { character ->

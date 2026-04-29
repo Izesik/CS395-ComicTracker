@@ -34,4 +34,8 @@ interface ComicDao {
     // Delete a series and all its associated comic issues from the database
     @Query("DELETE FROM SeriesEntity WHERE id = :seriesId")
     suspend fun deleteSeries(seriesId: Long)
+
+    // Search for series by title
+    @Query("SELECT * FROM SeriesEntity WHERE title LIKE '%' || :query || '%'")
+    fun searchSeries(query: String): Flow<List<SeriesEntity>>
 }

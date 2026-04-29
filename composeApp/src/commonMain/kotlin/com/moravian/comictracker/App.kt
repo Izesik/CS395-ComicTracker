@@ -1,6 +1,9 @@
 package com.moravian.comictracker
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -14,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -28,7 +32,9 @@ import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.ui.screens.ComicDetailScreen
 import com.moravian.comictracker.ui.screens.HomeScreen
 import com.moravian.comictracker.ui.screens.IssueDetailScreen
+import com.moravian.comictracker.ui.screens.SearchScreen
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
+import com.moravian.comictracker.ui.viewmodels.SearchViewModel
 
 sealed class Screen(val route: String, val label: String) {
     object Home : Screen("home", "Home")
@@ -49,6 +55,8 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
         val showBottomBar = detailRoutes.none { currentDestination?.route?.startsWith(it) == true }
 
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            contentWindowInsets = WindowInsets.safeDrawing,
             bottomBar = {
                 if (showBottomBar) {
                     NavigationBar {
@@ -94,7 +102,17 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
                     )
                 }
                 composable(Screen.MyCollection.route) { CollectionScreen() }
-                composable(Screen.Search.route) { /* TODO */ }
+                composable(Screen.Search.route) {
+                    val searchViewModel: SearchViewModel = viewModel {
+                        SearchViewModel(comicTrackerDatabase.comicDao())
+                    }
+                    SearchScreen(
+                        viewModel = searchViewModel,
+                        onComicClick = { volumeId ->
+                            navController.navigate("comic_detail/$volumeId")
+                        }
+                    )
+                }
                 composable(
                     route = "comic_detail/{volumeId}",
                     arguments = listOf(navArgument("volumeId") { type = NavType.StringType })

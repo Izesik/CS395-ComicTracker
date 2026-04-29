@@ -41,6 +41,9 @@ import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.ui.viewmodels.HomeTab
 import com.moravian.comictracker.ui.viewmodels.HomeUiState
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
+import comictracker.composeapp.generated.resources.Res
+import comictracker.composeapp.generated.resources.app_name
+import org.jetbrains.compose.resources.stringResource
 
 private val HomeBackground = Color(0xFF121212)
 private val CardBackground = Color(0xFF1E1E1E)
@@ -65,7 +68,7 @@ fun HomeScreen(
         // ── Header ────────────────────────────────────────────────────────
         Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 12.dp)) {
             Text(
-                text = "ComicShelf",
+                text = stringResource(Res.string.app_name),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = TextPrimary,

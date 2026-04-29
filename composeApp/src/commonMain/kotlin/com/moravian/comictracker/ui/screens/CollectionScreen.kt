@@ -30,6 +30,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moravian.comictracker.data.SeriesEntity
+import comictracker.composeapp.generated.resources.Res
+import comictracker.composeapp.generated.resources.no_comics_on_shelf
+import comictracker.composeapp.generated.resources.shelf_label
+import org.jetbrains.compose.resources.stringResource
 
 private val CollectionBackground = Color(0xFF121212)
 private val CardBackground = Color(0xFF1E1E1E)
@@ -45,7 +49,7 @@ fun CollectionScreen(series: List<SeriesEntity> = emptyList()) {
     ) {
         Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 12.dp)) {
             Text(
-                text = "My Shelf",
+                text = stringResource(Res.string.shelf_label),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = TextPrimary,
@@ -80,7 +84,7 @@ private fun EmptyShelf() {
                 modifier = Modifier.padding(bottom = 12.dp)
             )
             Text(
-                text = "No comics in shelf",
+                text = stringResource(Res.string.no_comics_on_shelf),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextMuted
             )
