@@ -54,7 +54,7 @@ class ComicVineApi {
     suspend fun getVolume(id: Int): ComicVineSingleResponse<ComicVineVolume> =
         client.get("$BASE_URL/volume/4050-$id/") {
             defaults()
-            parameter("field_list", "id,name,start_year,count_of_issues,deck,description,image,publisher,characters")
+            parameter("field_list", "id,name,start_year,count_of_issues,deck,description,image,publisher,characters,person_credits")
         }.body()
 
     suspend fun getIssuesByVolume(
@@ -73,7 +73,7 @@ class ComicVineApi {
     suspend fun getIssue(id: Int): ComicVineSingleResponse<ComicVineIssue> =
         client.get("$BASE_URL/issue/4000-$id/") {
             defaults()
-            parameter("field_list", "id,name,issue_number,cover_date,store_date,deck,description,image,volume,characters")
+            parameter("field_list", "id,name,issue_number,cover_date,store_date,deck,description,image,volume,characters,person_credits")
         }.body()
 
     suspend fun getPublisher(id: Int): ComicVineSingleResponse<ComicVinePublisher> =

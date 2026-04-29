@@ -1,12 +1,14 @@
 package com.moravian.comictracker.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.network.ComicVineCharacterRef
+import com.moravian.comictracker.network.ComicVineIssue
 import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailUiState
@@ -62,10 +65,12 @@ fun ComicDetailScreen(
     volumeId: Int,
     onBack: () -> Unit,
     database: ComicTrackerDatabase,
+    onIssueClick: (Int) -> Unit = {},
     viewModel: ComicDetailViewModel = viewModel(factory = ComicDetailViewModel.factory(volumeId, database))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val addState by viewModel.addState.collectAsStateWithLifecycle()
+    val issues by viewModel.issues.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize().background(ScreenBackground)) {
         when (val state = uiState) {
@@ -86,9 +91,11 @@ fun ComicDetailScreen(
             }
             is ComicDetailUiState.Success -> DetailContent(
                 volume = state.volume,
+                issues = issues,
                 onBack = onBack,
                 addState = addState,
-                onAddToCollection = { viewModel.addToCollection() }
+                onAddToCollection = { viewModel.addToCollection() },
+                onIssueClick = onIssueClick
             )
         }
     }
@@ -97,11 +104,14 @@ fun ComicDetailScreen(
 @Composable
 private fun DetailContent(
     volume: ComicVineVolume,
+    issues: List<ComicVineIssue>,
     onBack: () -> Unit,
     addState: AddCollectionState,
-    onAddToCollection: () -> Unit
+    onAddToCollection: () -> Unit,
+    onIssueClick: (Int) -> Unit
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
+        // ── Hero image ────────────────────────────────────────────────────
         item {
             Box(
                 modifier = Modifier
@@ -177,20 +187,67 @@ private fun DetailContent(
             }
         }
 
-        // ── Deck (plain-text summary) ─────────────────────────────────────
-        val summary = volume.deck?.takeIf { it.isNotBlank() }
-            ?: volume.description?.takeIf { it.isNotBlank() }?.stripHtml()
+        // ── Description ───────────────────────────────────────────────────
+        val summary = volume.description?.takeIf { it.isNotBlank() }?.stripHtml()
+            ?: volume.deck?.takeIf { it.isNotBlank() }
         summary?.let {
             item {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,
+                    maxLines = 8,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(ScreenBackground)
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 )
+            }
+        }
+
+        // ── Credits ───────────────────────────────────────────────────────
+        val credits = volume.personCredits.take(3)
+        if (credits.isNotEmpty()) {
+            item {
+                HorizontalDivider(
+                    color = Color.White.copy(alpha = 0.12f),
+                    modifier = Modifier.background(ScreenBackground)
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground)
+                        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "Credits",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    credits.forEach { person ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = person.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.Medium
+                            )
+                            person.role?.takeIf { it.isNotBlank() }?.let { role ->
+                                Text(
+                                    text = role,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -230,7 +287,7 @@ private fun DetailContent(
             }
         }
 
-        // ── Divider + Action ──────────────────────────────────────────────
+          // ── Add to collection ─────────────────────────────────────────────
         item {
             HorizontalDivider(
                 color = Color.White.copy(alpha = 0.12f),
@@ -275,6 +332,102 @@ private fun DetailContent(
                     )
                 }
             }
+        }
+
+        // ── Issues grid ───────────────────────────────────────────────────
+        if (issues.isNotEmpty()) {
+            item {
+                HorizontalDivider(
+                    color = Color.White.copy(alpha = 0.12f),
+                    modifier = Modifier.background(ScreenBackground)
+                )
+                Text(
+                    text = "Issues",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = TextPrimary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground)
+                        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp)
+                )
+            }
+            val rows = issues.chunked(3)
+            items(rows) { rowIssues ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground)
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowIssues.forEach { issue ->
+                        IssueGridCell(
+                            issue = issue,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onIssueClick(issue.id) }
+                        )
+                    }
+                    // Fill remaining slots so cells stay uniform width
+                    repeat(3 - rowIssues.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+            item {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .background(ScreenBackground)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun IssueGridCell(
+    issue: ComicVineIssue,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .aspectRatio(0.67f)
+            .clickable(onClick = onClick)
+    ) {
+        Card(
+            shape = RoundedCornerShape(6.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            AsyncImage(
+                model = issue.image?.mediumUrl,
+                contentDescription = "#${issue.issueNumber}",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        1f to Color.Black.copy(alpha = 0.75f)
+                    ),
+                    RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp)
+                )
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "#${issue.issueNumber}",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

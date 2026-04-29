@@ -18,7 +18,7 @@ import kotlin.reflect.KClass
 
 sealed class IssueDetailUiState {
     data object Loading : IssueDetailUiState()
-    data class Success(val issue: ComicVineIssue) : IssueDetailUiState()
+    data class Success(val issue: ComicVineIssue, val publisher: String? = null) : IssueDetailUiState()
     data class Error(val message: String) : IssueDetailUiState()
 }
 
@@ -43,8 +43,17 @@ class IssueDetailViewModel(
         viewModelScope.launch {
             _uiState.value = IssueDetailUiState.Loading
             try {
-                val response = api.getIssue(issueId)
-                _uiState.value = IssueDetailUiState.Success(response.results)
+                val issue = api.getIssue(issueId).results
+                _uiState.value = IssueDetailUiState.Success(issue)
+
+                issue.volume?.id?.let { volumeId ->
+                    try {
+                        val volume = api.getVolume(volumeId).results
+                        _uiState.value = IssueDetailUiState.Success(issue, volume.publisher?.name)
+                    } catch (_: Exception) {
+                        // Publisher is optional — keep current state without it
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.value = IssueDetailUiState.Error(e.message ?: "Failed to load issue")
             }

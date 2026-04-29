@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -85,6 +86,7 @@ fun IssueDetailScreen(
             }
             is IssueDetailUiState.Success -> IssueDetailContent(
                 issue = state.issue,
+                publisher = state.publisher,
                 onBack = onBack,
                 addState = addState,
                 onAddToCollection = { viewModel.addToCollection() }
@@ -96,13 +98,15 @@ fun IssueDetailScreen(
 @Composable
 private fun IssueDetailContent(
     issue: ComicVineIssue,
+    publisher: String?,
     onBack: () -> Unit,
     addState: AddCollectionState,
     onAddToCollection: () -> Unit
 ) {
-    val displayTitle = issue.name?.takeIf { it.isNotBlank() } ?: "Issue #${issue.issueNumber}"
+    val volumeName = "${issue.volume?.name} #${issue.issueNumber}" ?: "Issue #${issue.issueNumber}"
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
+        // ── Hero image ────────────────────────────────────────────────────
         item {
             Box(
                 modifier = Modifier
@@ -141,7 +145,7 @@ private fun IssueDetailContent(
                     ) {
                         AsyncImage(
                             model = issue.image?.mediumUrl,
-                            contentDescription = displayTitle,
+                            contentDescription = volumeName,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -159,7 +163,7 @@ private fun IssueDetailContent(
                             )
                         )
                         Text(
-                            text = displayTitle,
+                            text = volumeName,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = IssueTextPrimary,
@@ -167,7 +171,7 @@ private fun IssueDetailContent(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = buildIssueMeta(issue.volume?.name, issue.coverDate),
+                            text = buildIssueMeta(publisher, issue.coverDate),
                             style = MaterialTheme.typography.bodyMedium,
                             color = IssueTextSecondary
                         )
@@ -178,14 +182,17 @@ private fun IssueDetailContent(
             }
         }
 
-        val summary = issue.deck?.takeIf { it.isNotBlank() }
-            ?: issue.description?.takeIf { it.isNotBlank() }?.stripIssueHtml()
+        // ── Description ───────────────────────────────────────────────────
+        val summary = issue.description?.takeIf { it.isNotBlank() }?.stripIssueHtml()
+            ?: issue.deck?.takeIf { it.isNotBlank() }
         summary?.let {
             item {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodyMedium,
                     color = IssueTextSecondary,
+                    maxLines = 8,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(ScreenBackground)
@@ -194,6 +201,52 @@ private fun IssueDetailContent(
             }
         }
 
+        // ── Credits ───────────────────────────────────────────────────────
+        val credits = issue.personCredits.take(3)
+        if (credits.isNotEmpty()) {
+            item {
+                HorizontalDivider(
+                    color = Color.White.copy(alpha = 0.12f),
+                    modifier = Modifier.background(ScreenBackground)
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground)
+                        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "Credits",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = IssueTextPrimary,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    credits.forEach { person ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = person.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = IssueTextPrimary,
+                                fontWeight = FontWeight.Medium
+                            )
+                            person.role?.takeIf { it.isNotBlank() }?.let { role ->
+                                Text(
+                                    text = role,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = IssueTextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Characters ────────────────────────────────────────────────────
         if (issue.characters.isNotEmpty()) {
             item {
                 HorizontalDivider(
@@ -213,7 +266,7 @@ private fun IssueDetailContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(ScreenBackground),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(issue.characters.take(20)) { character ->
@@ -229,6 +282,7 @@ private fun IssueDetailContent(
             }
         }
 
+        // ── Add to collection ─────────────────────────────────────────────
         item {
             HorizontalDivider(
                 color = Color.White.copy(alpha = 0.12f),
@@ -338,9 +392,9 @@ private fun IssueBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-private fun buildIssueMeta(seriesName: String?, coverDate: String?): String =
+private fun buildIssueMeta(publisher: String?, coverDate: String?): String =
     buildString {
-        seriesName?.let { append(it) }
+        publisher?.let { append(it) }
         coverDate?.let {
             if (isNotEmpty()) append(" · ")
             append(it)

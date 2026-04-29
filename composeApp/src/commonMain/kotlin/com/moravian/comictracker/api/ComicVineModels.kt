@@ -22,6 +22,13 @@ data class ComicVineSingleResponse<T>(
 )
 
 @Serializable
+data class ComicVinePersonCredit(
+    val id: Int,
+    val name: String,
+    val role: String? = null
+)
+
+@Serializable
 data class ComicVineVolume(
     val id: Int,
     val name: String,
@@ -32,6 +39,7 @@ data class ComicVineVolume(
     val image: ComicVineImage? = null,
     val publisher: ComicVinePublisherRef? = null,
     val characters: List<ComicVineCharacterRef> = emptyList(),
+    @SerialName("person_credits") val personCredits: List<ComicVinePersonCredit> = emptyList(),
     @SerialName("content_rating") val contentRating: String? = null
 )
 
@@ -47,6 +55,7 @@ data class ComicVineIssue(
     val image: ComicVineImage? = null,
     val volume: ComicVineVolumeRef? = null,
     val characters: List<ComicVineCharacterRef> = emptyList(),
+    @SerialName("person_credits") val personCredits: List<ComicVinePersonCredit> = emptyList(),
     @SerialName("content_rating") val contentRating: String? = null
 )
 

@@ -124,7 +124,8 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
                     ComicDetailScreen(
                         volumeId = volumeId,
                         onBack = { navController.popBackStack() },
-                        database = comicTrackerDatabase
+                        database = comicTrackerDatabase,
+                        onIssueClick = { navController.navigate("issue_detail/$it") }
                     )
                 }
                 composable(

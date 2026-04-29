@@ -8,6 +8,7 @@ import com.moravian.comictracker.data.ComicDao
 import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.data.SeriesEntity
 import com.moravian.comictracker.network.ComicVineApi
+import com.moravian.comictracker.network.ComicVineIssue
 import com.moravian.comictracker.network.ComicVineVolume
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,8 +34,12 @@ class ComicDetailViewModel(
     private val _addState = MutableStateFlow<AddCollectionState>(AddCollectionState.Checking)
     val addState: StateFlow<AddCollectionState> = _addState.asStateFlow()
 
+    private val _issues = MutableStateFlow<List<ComicVineIssue>>(emptyList())
+    val issues: StateFlow<List<ComicVineIssue>> = _issues.asStateFlow()
+
     init {
         loadVolumeDetails()
+        loadIssues()
         checkIfInCollection()
     }
 
@@ -46,6 +51,17 @@ class ComicDetailViewModel(
                 _uiState.value = ComicDetailUiState.Success(response.results)
             } catch (e: Exception) {
                 _uiState.value = ComicDetailUiState.Error(e.message ?: "Failed to load comic details")
+            }
+        }
+    }
+
+    private fun loadIssues() {
+        viewModelScope.launch {
+            try {
+                val response = api.getIssuesByVolume(volumeId)
+                _issues.value = response.results.sortedBy { it.issueNumber.toDoubleOrNull() ?: 0.0 }
+            } catch (_: Exception) {
+                // Issues grid is optional — failure is silent
             }
         }
     }
