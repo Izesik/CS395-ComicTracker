@@ -24,8 +24,8 @@ interface ComicDao {
     fun getComicIssuesForSeries(seriesId: Long): Flow<List<ComicIssueEntity>>
 
     // Update the read status of a comic issue
-    @Query("UPDATE ComicIssueEntity SET isRead = :isRead WHERE id = :issueId")
-    suspend fun updateComicIssueReadStatus(issueId: Long, isRead: Boolean)
+    @Query("UPDATE ComicIssueEntity SET readStatus = :status WHERE id = :issueId")
+    suspend fun updateReadStatus(issueId: Long, status: ReadStatus)
 
     // Delete a comic issue from the database
     @Query("DELETE FROM ComicIssueEntity WHERE id = :issueId")
