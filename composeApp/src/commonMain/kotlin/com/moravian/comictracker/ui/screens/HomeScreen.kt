@@ -65,7 +65,6 @@ fun HomeScreen(
             .fillMaxSize()
             .background(HomeBackground)
     ) {
-        // ── Header ────────────────────────────────────────────────────────
         Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 12.dp)) {
             Text(
                 text = stringResource(Res.string.app_name),
@@ -78,7 +77,6 @@ fun HomeScreen(
             TabRow(selectedTab = selectedTab, onTabSelected = viewModel::selectTab)
         }
 
-        // ── Content ───────────────────────────────────────────────────────
         when (val state = uiState) {
             is HomeUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

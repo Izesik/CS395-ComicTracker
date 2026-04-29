@@ -103,9 +103,7 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
                 }
                 composable(Screen.MyCollection.route) { CollectionScreen() }
                 composable(Screen.Search.route) {
-                    val searchViewModel: SearchViewModel = viewModel {
-                        SearchViewModel(comicTrackerDatabase.comicDao())
-                    }
+                    val searchViewModel: SearchViewModel = viewModel { SearchViewModel() }
                     SearchScreen(
                         viewModel = searchViewModel,
                         onComicClick = { volumeId ->
