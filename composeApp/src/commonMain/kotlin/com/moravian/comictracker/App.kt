@@ -27,9 +27,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.moravian.comictracker.ui.screens.CollectionScreen
 import com.moravian.comictracker.data.ComicTrackerDatabase
+import com.moravian.comictracker.data.UserPreferencesRepository
+import com.moravian.comictracker.ui.screens.CollectionScreen
 import com.moravian.comictracker.ui.screens.ComicDetailScreen
+import com.moravian.comictracker.ui.screens.ComicWebViewScreen
 import com.moravian.comictracker.ui.screens.HomeScreen
 import com.moravian.comictracker.ui.screens.IssueDetailScreen
 import com.moravian.comictracker.ui.screens.SearchScreen
@@ -43,17 +45,17 @@ sealed class Screen(val route: String, val label: String) {
     object Search : Screen("search", "Search")
 }
 
-private val detailRoutes = listOf("comic_detail", "issue_detail")
+private val hideBottomBarPrefixes = listOf("comic_detail", "issue_detail", "webview")
 
 @Composable
-fun App(comicTrackerDatabase: ComicTrackerDatabase) {
+fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesRepository) {
     MaterialTheme {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
 
         val navItems = listOf(Screen.Home, Screen.MyCollection, Screen.Search)
-        val showBottomBar = detailRoutes.none { currentDestination?.route?.startsWith(it) == true }
+        val showBottomBar = hideBottomBarPrefixes.none { currentDestination?.route?.startsWith(it) == true }
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -104,7 +106,7 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
                 }
                 composable(Screen.MyCollection.route) {
                     CollectionScreen(
-                        viewModel = viewModel(factory = CollectionViewModel.factory(comicTrackerDatabase))
+                        viewModel = viewModel(factory = CollectionViewModel.factory(database, prefsRepository))
                     )
                 }
                 composable(Screen.Search.route) {
@@ -124,8 +126,9 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
                     ComicDetailScreen(
                         volumeId = volumeId,
                         onBack = { navController.popBackStack() },
-                        database = comicTrackerDatabase,
-                        onIssueClick = { navController.navigate("issue_detail/$it") }
+                        database = database,
+                        onIssueClick = { navController.navigate("issue_detail/$it") },
+                        onViewOnComicVine = { navController.navigate("webview/volume/$volumeId") }
                     )
                 }
                 composable(
@@ -136,7 +139,28 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
                     IssueDetailScreen(
                         issueId = issueId,
                         onBack = { navController.popBackStack() },
-                        database = comicTrackerDatabase
+                        database = database,
+                        onViewOnComicVine = { navController.navigate("webview/issue/$issueId") }
+                    )
+                }
+                composable(
+                    route = "webview/{type}/{id}",
+                    arguments = listOf(
+                        navArgument("type") { type = NavType.StringType },
+                        navArgument("id") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val type = backStackEntry.arguments?.getString("type") ?: return@composable
+                    val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
+                    val url = when (type) {
+                        "volume" -> "https://comicvine.gamespot.com/volume/4050-$id/"
+                        "issue" -> "https://comicvine.gamespot.com/issue/4000-$id/"
+                        else -> return@composable
+                    }
+                    ComicWebViewScreen(
+                        url = url,
+                        title = "ComicVine",
+                        onBack = { navController.popBackStack() }
                     )
                 }
             }

@@ -5,20 +5,29 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.moravian.comictracker.data.ComicTrackerDatabase
+import com.moravian.comictracker.data.UserPreferencesRepository
 import com.moravian.comictracker.data.getComicTrackerDatabase
+import okio.Path.Companion.toPath
 
 class MainActivity : ComponentActivity() {
+    private val prefsDataStore by lazy {
+        PreferenceDataStoreFactory.createWithPath {
+            filesDir.resolve("user_prefs.preferences_pb").absolutePath.toPath()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         setContent {
-            App(getComicTrackerDatabase(getDatabaseBuilder(this)))
+            App(
+                database = getComicTrackerDatabase(getDatabaseBuilder(this)),
+                prefsRepository = UserPreferencesRepository(prefsDataStore)
+            )
         }
     }
 }

@@ -66,6 +66,7 @@ fun ComicDetailScreen(
     onBack: () -> Unit,
     database: ComicTrackerDatabase,
     onIssueClick: (Int) -> Unit = {},
+    onViewOnComicVine: () -> Unit = {},
     viewModel: ComicDetailViewModel = viewModel(factory = ComicDetailViewModel.factory(volumeId, database))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -95,7 +96,8 @@ fun ComicDetailScreen(
                 onBack = onBack,
                 addState = addState,
                 onAddToCollection = { viewModel.addToCollection() },
-                onIssueClick = onIssueClick
+                onIssueClick = onIssueClick,
+                onViewOnComicVine = onViewOnComicVine
             )
         }
     }
@@ -108,7 +110,8 @@ private fun DetailContent(
     onBack: () -> Unit,
     addState: AddCollectionState,
     onAddToCollection: () -> Unit,
-    onIssueClick: (Int) -> Unit
+    onIssueClick: (Int) -> Unit,
+    onViewOnComicVine: () -> Unit
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         // ── Hero image ────────────────────────────────────────────────────
@@ -330,6 +333,25 @@ private fun DetailContent(
                             AddCollectionState.Idle -> "Add to Collection"
                         }
                     )
+                }
+            }
+        }
+
+        // ── View on ComicVine ─────────────────────────────────────────────
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(ScreenBackground)
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .padding(bottom = 8.dp)
+            ) {
+                Button(
+                    onClick = onViewOnComicVine,
+                    colors = ButtonDefaults.outlinedButtonColors(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("View on ComicVine")
                 }
             }
         }

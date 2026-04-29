@@ -62,6 +62,7 @@ fun IssueDetailScreen(
     issueId: Int,
     onBack: () -> Unit,
     database: ComicTrackerDatabase,
+    onViewOnComicVine: () -> Unit = {},
     viewModel: IssueDetailViewModel = viewModel(factory = IssueDetailViewModel.factory(issueId, database))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -89,7 +90,8 @@ fun IssueDetailScreen(
                 publisher = state.publisher,
                 onBack = onBack,
                 addState = addState,
-                onAddToCollection = { viewModel.addToCollection() }
+                onAddToCollection = { viewModel.addToCollection() },
+                onViewOnComicVine = onViewOnComicVine
             )
         }
     }
@@ -101,7 +103,8 @@ private fun IssueDetailContent(
     publisher: String?,
     onBack: () -> Unit,
     addState: AddCollectionState,
-    onAddToCollection: () -> Unit
+    onAddToCollection: () -> Unit,
+    onViewOnComicVine: () -> Unit
 ) {
     val volumeName = "${issue.volume?.name} #${issue.issueNumber}" ?: "Issue #${issue.issueNumber}"
 
@@ -325,6 +328,25 @@ private fun IssueDetailContent(
                             AddCollectionState.Idle -> "Add to Collection"
                         }
                     )
+                }
+            }
+        }
+
+        // ── View on ComicVine ─────────────────────────────────────────────
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(ScreenBackground)
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .padding(bottom = 8.dp)
+            ) {
+                Button(
+                    onClick = onViewOnComicVine,
+                    colors = ButtonDefaults.outlinedButtonColors(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("View on ComicVine")
                 }
             }
         }
