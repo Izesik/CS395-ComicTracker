@@ -33,6 +33,7 @@ import com.moravian.comictracker.ui.screens.ComicDetailScreen
 import com.moravian.comictracker.ui.screens.HomeScreen
 import com.moravian.comictracker.ui.screens.IssueDetailScreen
 import com.moravian.comictracker.ui.screens.SearchScreen
+import com.moravian.comictracker.ui.viewmodels.CollectionViewModel
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
 import com.moravian.comictracker.ui.viewmodels.SearchViewModel
 
@@ -101,7 +102,11 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
                         viewModel = viewModel { HomeViewModel() }
                     )
                 }
-                composable(Screen.MyCollection.route) { CollectionScreen() }
+                composable(Screen.MyCollection.route) {
+                    CollectionScreen(
+                        viewModel = viewModel(factory = CollectionViewModel.factory(comicTrackerDatabase))
+                    )
+                }
                 composable(Screen.Search.route) {
                     val searchViewModel: SearchViewModel = viewModel { SearchViewModel() }
                     SearchScreen(
@@ -118,7 +123,8 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
                     val volumeId = backStackEntry.savedStateHandle.get<String>("volumeId")?.toIntOrNull() ?: return@composable
                     ComicDetailScreen(
                         volumeId = volumeId,
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() },
+                        database = comicTrackerDatabase
                     )
                 }
                 composable(
@@ -128,7 +134,8 @@ fun App(comicTrackerDatabase: ComicTrackerDatabase) {
                     val issueId = backStackEntry.savedStateHandle.get<String>("issueId")?.toIntOrNull() ?: return@composable
                     IssueDetailScreen(
                         issueId = issueId,
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() },
+                        database = comicTrackerDatabase
                     )
                 }
             }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,8 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.network.ComicVineCharacterRef
 import com.moravian.comictracker.network.ComicVineIssue
+import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailUiState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailViewModel
 
@@ -57,9 +60,11 @@ private val IssueOverlayDark = Color.Black.copy(alpha = 0.55f)
 fun IssueDetailScreen(
     issueId: Int,
     onBack: () -> Unit,
-    viewModel: IssueDetailViewModel = viewModel(factory = IssueDetailViewModel.factory(issueId))
+    database: ComicTrackerDatabase,
+    viewModel: IssueDetailViewModel = viewModel(factory = IssueDetailViewModel.factory(issueId, database))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val addState by viewModel.addState.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize().background(ScreenBackground)) {
         when (val state = uiState) {
@@ -78,13 +83,23 @@ fun IssueDetailScreen(
                 )
                 IssueBackButton(onBack = onBack)
             }
-            is IssueDetailUiState.Success -> IssueDetailContent(issue = state.issue, onBack = onBack)
+            is IssueDetailUiState.Success -> IssueDetailContent(
+                issue = state.issue,
+                onBack = onBack,
+                addState = addState,
+                onAddToCollection = { viewModel.addToCollection() }
+            )
         }
     }
 }
 
 @Composable
-private fun IssueDetailContent(issue: ComicVineIssue, onBack: () -> Unit) {
+private fun IssueDetailContent(
+    issue: ComicVineIssue,
+    onBack: () -> Unit,
+    addState: AddCollectionState,
+    onAddToCollection: () -> Unit
+) {
     val displayTitle = issue.name?.takeIf { it.isNotBlank() } ?: "Issue #${issue.issueNumber}"
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -227,11 +242,35 @@ private fun IssueDetailContent(issue: ComicVineIssue, onBack: () -> Unit) {
                     .background(ScreenBackground)
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
+                val inCollection = addState == AddCollectionState.InCollection || addState == AddCollectionState.Added
+                val isLoading = addState == AddCollectionState.Checking || addState == AddCollectionState.Adding
                 Button(
-                    onClick = { /* TODO: add to collection */ },
+                    onClick = onAddToCollection,
+                    enabled = addState == AddCollectionState.Idle,
+                    colors = if (inCollection) ButtonDefaults.buttonColors(
+                        disabledContainerColor = IssueBadgeGreen,
+                        disabledContentColor = Color.White
+                    ) else ButtonDefaults.buttonColors(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Add to Collection")
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .height(16.dp)
+                                .width(16.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        when (addState) {
+                            AddCollectionState.Checking, AddCollectionState.Adding -> "Loading..."
+                            AddCollectionState.InCollection -> "In Collection"
+                            AddCollectionState.Added -> "Added to Collection!"
+                            AddCollectionState.Idle -> "Add to Collection"
+                        }
+                    )
                 }
             }
         }

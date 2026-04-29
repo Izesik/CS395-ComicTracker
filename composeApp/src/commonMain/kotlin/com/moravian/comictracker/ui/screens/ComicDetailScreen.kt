@@ -1,4 +1,4 @@
- package com.moravian.comictracker.ui.screens
+package com.moravian.comictracker.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,8 +44,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.network.ComicVineCharacterRef
 import com.moravian.comictracker.network.ComicVineVolume
+import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailUiState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailViewModel
 
@@ -58,9 +61,11 @@ private val OverlayDark = Color.Black.copy(alpha = 0.55f)
 fun ComicDetailScreen(
     volumeId: Int,
     onBack: () -> Unit,
-    viewModel: ComicDetailViewModel = viewModel(factory = ComicDetailViewModel.factory(volumeId))
+    database: ComicTrackerDatabase,
+    viewModel: ComicDetailViewModel = viewModel(factory = ComicDetailViewModel.factory(volumeId, database))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val addState by viewModel.addState.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize().background(ScreenBackground)) {
         when (val state = uiState) {
@@ -79,13 +84,23 @@ fun ComicDetailScreen(
                 )
                 TopBackButton(onBack = onBack)
             }
-            is ComicDetailUiState.Success -> DetailContent(volume = state.volume, onBack = onBack)
+            is ComicDetailUiState.Success -> DetailContent(
+                volume = state.volume,
+                onBack = onBack,
+                addState = addState,
+                onAddToCollection = { viewModel.addToCollection() }
+            )
         }
     }
 }
 
 @Composable
-private fun DetailContent(volume: ComicVineVolume, onBack: () -> Unit) {
+private fun DetailContent(
+    volume: ComicVineVolume,
+    onBack: () -> Unit,
+    addState: AddCollectionState,
+    onAddToCollection: () -> Unit
+) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
             Box(
@@ -229,11 +244,35 @@ private fun DetailContent(volume: ComicVineVolume, onBack: () -> Unit) {
                     .background(ScreenBackground)
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
+                val inCollection = addState == AddCollectionState.InCollection || addState == AddCollectionState.Added
+                val isLoading = addState == AddCollectionState.Checking || addState == AddCollectionState.Adding
                 Button(
-                    onClick = { /* TODO: add to collection */ },
+                    onClick = onAddToCollection,
+                    enabled = addState == AddCollectionState.Idle,
+                    colors = if (inCollection) ButtonDefaults.buttonColors(
+                        disabledContainerColor = BadgeGreen,
+                        disabledContentColor = Color.White
+                    ) else ButtonDefaults.buttonColors(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Add to Collection")
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .height(16.dp)
+                                .width(16.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        when (addState) {
+                            AddCollectionState.Checking, AddCollectionState.Adding -> "Loading..."
+                            AddCollectionState.InCollection -> "In Collection"
+                            AddCollectionState.Added -> "Added to Collection!"
+                            AddCollectionState.Idle -> "Add to Collection"
+                        }
+                    )
                 }
             }
         }

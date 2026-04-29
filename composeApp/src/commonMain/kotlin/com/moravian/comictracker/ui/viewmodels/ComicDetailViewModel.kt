@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import com.moravian.comictracker.data.ComicDao
+import com.moravian.comictracker.data.ComicTrackerDatabase
+import com.moravian.comictracker.data.SeriesEntity
 import com.moravian.comictracker.network.ComicVineApi
 import com.moravian.comictracker.network.ComicVineVolume
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,13 +21,21 @@ sealed class ComicDetailUiState {
     data class Error(val message: String) : ComicDetailUiState()
 }
 
-class ComicDetailViewModel(private val volumeId: Int) : ViewModel() {
+class ComicDetailViewModel(
+    private val volumeId: Int,
+    private val dao: ComicDao
+) : ViewModel() {
     private val api = ComicVineApi()
+
     private val _uiState = MutableStateFlow<ComicDetailUiState>(ComicDetailUiState.Loading)
     val uiState: StateFlow<ComicDetailUiState> = _uiState.asStateFlow()
 
+    private val _addState = MutableStateFlow<AddCollectionState>(AddCollectionState.Checking)
+    val addState: StateFlow<AddCollectionState> = _addState.asStateFlow()
+
     init {
         loadVolumeDetails()
+        checkIfInCollection()
     }
 
     private fun loadVolumeDetails() {
@@ -39,11 +50,35 @@ class ComicDetailViewModel(private val volumeId: Int) : ViewModel() {
         }
     }
 
-    companion object {
-        fun factory(volumeId: Int): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T =
-                ComicDetailViewModel(volumeId) as T
+    private fun checkIfInCollection() {
+        viewModelScope.launch {
+            val existing = dao.getSeriesByComicvineId(volumeId)
+            _addState.value = if (existing != null) AddCollectionState.InCollection else AddCollectionState.Idle
         }
+    }
+
+    fun addToCollection() {
+        val volume = (uiState.value as? ComicDetailUiState.Success)?.volume ?: return
+        viewModelScope.launch {
+            _addState.value = AddCollectionState.Adding
+            dao.insertSeries(
+                SeriesEntity(
+                    comicvineId = volume.id,
+                    title = volume.name,
+                    publisher = volume.publisher?.name,
+                    coverImageUrl = volume.image?.mediumUrl
+                )
+            )
+            _addState.value = AddCollectionState.Added
+        }
+    }
+
+    companion object {
+        fun factory(volumeId: Int, database: ComicTrackerDatabase): ViewModelProvider.Factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T =
+                    ComicDetailViewModel(volumeId, database.comicDao()) as T
+            }
     }
 }

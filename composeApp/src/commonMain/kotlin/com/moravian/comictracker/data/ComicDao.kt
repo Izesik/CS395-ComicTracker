@@ -7,35 +7,33 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ComicDao {
-    // Insert a new series into the database
     @Insert
-    suspend fun insertSeries(series: SeriesEntity)
+    suspend fun insertSeries(series: SeriesEntity): Long
 
-    // Insert a new comic issue into the database
     @Insert
     suspend fun insertComicIssue(issue: ComicIssueEntity): Long
 
-    // Get all series from the database
     @Query("SELECT * FROM SeriesEntity")
     fun getAllSeries(): Flow<List<SeriesEntity>>
 
-    // Get all comic issues for a specific series
+    @Query("SELECT * FROM SeriesEntity WHERE comicvineId = :comicvineId LIMIT 1")
+    suspend fun getSeriesByComicvineId(comicvineId: Int): SeriesEntity?
+
+    @Query("SELECT * FROM ComicIssueEntity WHERE comicvineId = :comicvineId LIMIT 1")
+    suspend fun getIssueByComicvineId(comicvineId: Int): ComicIssueEntity?
+
     @Query("SELECT * FROM ComicIssueEntity WHERE seriesId = :seriesId")
     fun getComicIssuesForSeries(seriesId: Long): Flow<List<ComicIssueEntity>>
 
-    // Update the read status of a comic issue
     @Query("UPDATE ComicIssueEntity SET readStatus = :status WHERE id = :issueId")
     suspend fun updateReadStatus(issueId: Long, status: ReadStatus)
 
-    // Delete a comic issue from the database
     @Query("DELETE FROM ComicIssueEntity WHERE id = :issueId")
     suspend fun deleteComicIssue(issueId: Long)
 
-    // Delete a series and all its associated comic issues from the database
     @Query("DELETE FROM SeriesEntity WHERE id = :seriesId")
     suspend fun deleteSeries(seriesId: Long)
 
-    // Search for series by title
     @Query("SELECT * FROM SeriesEntity WHERE title LIKE '%' || :query || '%'")
     fun searchSeries(query: String): Flow<List<SeriesEntity>>
 }

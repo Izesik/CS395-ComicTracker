@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "02e19b56b2c5eb624986350d006fc498",
+    "identityHash": "913e3f3ae22f26b67568b26e5f2a53a0",
     "entities": [
       {
         "tableName": "SeriesEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `comicvineId` INTEGER NOT NULL, `title` TEXT NOT NULL, `publisher` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `comicvineId` INTEGER NOT NULL, `title` TEXT NOT NULL, `publisher` TEXT, `coverImageUrl` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -29,6 +29,11 @@
           {
             "fieldPath": "publisher",
             "columnName": "publisher",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "coverImageUrl",
+            "columnName": "coverImageUrl",
             "affinity": "TEXT"
           }
         ],
@@ -115,11 +120,35 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "CreatorEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '02e19b56b2c5eb624986350d006fc498')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '913e3f3ae22f26b67568b26e5f2a53a0')"
     ]
   }
 }

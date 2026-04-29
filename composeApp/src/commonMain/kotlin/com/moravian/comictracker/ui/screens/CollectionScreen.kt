@@ -21,15 +21,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.SeriesEntity
+import com.moravian.comictracker.ui.viewmodels.CollectionViewModel
 import comictracker.composeapp.generated.resources.Res
 import comictracker.composeapp.generated.resources.no_comics_on_shelf
 import comictracker.composeapp.generated.resources.shelf_label
@@ -41,7 +46,9 @@ private val TextPrimary = Color.White
 private val TextMuted = Color(0xFF888888)
 
 @Composable
-fun CollectionScreen(series: List<SeriesEntity> = emptyList()) {
+fun CollectionScreen(viewModel: CollectionViewModel) {
+    val series by viewModel.series.collectAsStateWithLifecycle()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -103,11 +110,20 @@ private fun SeriesCard(series: SeriesEntity) {
                 .background(CardBackground),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Filled.MenuBook,
-                contentDescription = null,
-                tint = TextMuted
-            )
+            if (series.coverImageUrl != null) {
+                AsyncImage(
+                    model = series.coverImageUrl,
+                    contentDescription = series.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.MenuBook,
+                    contentDescription = null,
+                    tint = TextMuted
+                )
+            }
         }
         Spacer(modifier = Modifier.height(5.dp))
         Text(
