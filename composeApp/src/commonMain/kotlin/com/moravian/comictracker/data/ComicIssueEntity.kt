@@ -10,7 +10,8 @@ import androidx.room.PrimaryKey
         parentColumns = ["id"],
         childColumns = ["seriesId"],
         onDelete = ForeignKey.CASCADE
-    )]
+    )],
+    indices = [androidx.room.Index(value = ["seriesId"])]
 )
 data class ComicIssueEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -22,9 +23,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.ui.screens.ComicDetailScreen
 import com.moravian.comictracker.ui.screens.HomeScreen
 import com.moravian.comictracker.ui.screens.IssueDetailScreen
+import com.moravian.comictracker.ui.viewmodels.HomeViewModel
 
 sealed class Screen(val route: String, val label: String) {
     object Home : Screen("home", "Home")
@@ -35,7 +38,7 @@ sealed class Screen(val route: String, val label: String) {
 private val detailRoutes = listOf("comic_detail", "issue_detail")
 
 @Composable
-fun App() {
+fun App(comicTrackerDatabase: ComicTrackerDatabase) {
     MaterialTheme {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -85,16 +88,17 @@ fun App() {
                 composable(Screen.Home.route) {
                     HomeScreen(
                         onVolumeClick = { navController.navigate("comic_detail/$it") },
-                        onIssueClick = { navController.navigate("issue_detail/$it") }
+                        onIssueClick = { navController.navigate("issue_detail/$it") },
+                        viewModel = viewModel { HomeViewModel() }
                     )
                 }
                 composable(Screen.MyCollection.route) { /* TODO */ }
                 composable(Screen.Search.route) { /* TODO */ }
                 composable(
                     route = "comic_detail/{volumeId}",
-                    arguments = listOf(navArgument("volumeId") { type = NavType.IntType })
+                    arguments = listOf(navArgument("volumeId") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val volumeId = backStackEntry.arguments?.getInt("volumeId") ?: return@composable
+                    val volumeId = backStackEntry.savedStateHandle.get<String>("volumeId")?.toIntOrNull() ?: return@composable
                     ComicDetailScreen(
                         volumeId = volumeId,
                         onBack = { navController.popBackStack() }
@@ -102,9 +106,9 @@ fun App() {
                 }
                 composable(
                     route = "issue_detail/{issueId}",
-                    arguments = listOf(navArgument("issueId") { type = NavType.IntType })
+                    arguments = listOf(navArgument("issueId") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val issueId = backStackEntry.arguments?.getInt("issueId") ?: return@composable
+                    val issueId = backStackEntry.savedStateHandle.get<String>("issueId")?.toIntOrNull() ?: return@composable
                     IssueDetailScreen(
                         issueId = issueId,
                         onBack = { navController.popBackStack() }
