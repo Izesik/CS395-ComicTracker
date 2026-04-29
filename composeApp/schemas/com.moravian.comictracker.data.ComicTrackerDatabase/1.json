@@ -2,15 +2,21 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "291731b76ee7bc89acc323fc914d9f9c",
+    "identityHash": "de7053734f68f45810753465f8b91e22",
     "entities": [
       {
         "tableName": "SeriesEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `publisher` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `comicvineId` INTEGER NOT NULL, `title` TEXT NOT NULL, `publisher` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "comicvineId",
+            "columnName": "comicvineId",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -23,8 +29,7 @@
           {
             "fieldPath": "publisher",
             "columnName": "publisher",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -36,11 +41,17 @@
       },
       {
         "tableName": "ComicIssueEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `seriesId` INTEGER NOT NULL, `issueNumber` INTEGER NOT NULL, `title` TEXT NOT NULL, `isRead` INTEGER NOT NULL, `coverImagePath` TEXT, FOREIGN KEY(`seriesId`) REFERENCES `SeriesEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `comicvineId` INTEGER NOT NULL, `seriesId` INTEGER NOT NULL, `issueNumber` INTEGER NOT NULL, `title` TEXT NOT NULL, `readStatus` TEXT NOT NULL, `coverImageUrl` TEXT, FOREIGN KEY(`seriesId`) REFERENCES `SeriesEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "comicvineId",
+            "columnName": "comicvineId",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -63,14 +74,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "isRead",
-            "columnName": "isRead",
-            "affinity": "INTEGER",
+            "fieldPath": "readStatus",
+            "columnName": "readStatus",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "coverImagePath",
-            "columnName": "coverImagePath",
+            "fieldPath": "coverImageUrl",
+            "columnName": "coverImageUrl",
             "affinity": "TEXT"
           }
         ],
@@ -80,6 +91,17 @@
             "id"
           ]
         },
+        "indices": [
+          {
+            "name": "index_ComicIssueEntity_seriesId",
+            "unique": false,
+            "columnNames": [
+              "seriesId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ComicIssueEntity_seriesId` ON `${TABLE_NAME}` (`seriesId`)"
+          }
+        ],
         "foreignKeys": [
           {
             "table": "SeriesEntity",
@@ -121,7 +143,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '291731b76ee7bc89acc323fc914d9f9c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'de7053734f68f45810753465f8b91e22')"
     ]
   }
 }
