@@ -1,7 +1,6 @@
 package com.moravian.comictracker
 
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.shape.CircleShape
@@ -20,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -42,6 +40,9 @@ import com.moravian.comictracker.ui.screens.SearchScreen
 import com.moravian.comictracker.ui.viewmodels.CollectionViewModel
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
 import com.moravian.comictracker.ui.viewmodels.SearchViewModel
+import comictracker.composeapp.generated.resources.Res
+import comictracker.composeapp.generated.resources.metron_label
+import org.jetbrains.compose.resources.stringResource
 
 sealed class Screen(val route: String, val label: String) {
     object Home : Screen("home", "Home")
@@ -180,8 +181,8 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                         navArgument("id") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
-                    val type = backStackEntry.arguments?.getString("type") ?: return@composable
-                    val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
+                    val type = backStackEntry.savedStateHandle.get<String>("type") ?: return@composable
+                    val id = backStackEntry.savedStateHandle.get<String>("id") ?: return@composable
                     val url = when (type) {
                         "series" -> "https://metron.cloud/series/$id/"
                         "issue" -> "https://metron.cloud/issue/$id/"
@@ -189,7 +190,7 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     }
                     ComicWebViewScreen(
                         url = url,
-                        title = "Metron",
+                        title = stringResource(Res.string.metron_label),
                         onBack = { navController.popBackStack() }
                     )
                 }

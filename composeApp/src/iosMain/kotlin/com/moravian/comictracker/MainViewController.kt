@@ -7,14 +7,9 @@ import androidx.room.RoomDatabase
 import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.data.UserPreferencesRepository
 import com.moravian.comictracker.data.getComicTrackerDatabase
+import kotlinx.io.files.Path
 import okio.Path.Companion.toPath
 import platform.Foundation.NSHomeDirectory
-
-private val iosPrefsDataStore by lazy {
-    PreferenceDataStoreFactory.createWithPath {
-        Path(NSHomeDirectory() + "/Documents/user_prefs.preferences_pb")
-    }
-}
 
 fun MainViewController() = ComposeUIViewController {
     App(
@@ -23,6 +18,13 @@ fun MainViewController() = ComposeUIViewController {
     )
 }.apply {
     this.view.setNeedsLayout()
+}
+
+// Allows for the app to run in iOS emulator
+private val iosPrefsDataStore by lazy {
+    PreferenceDataStoreFactory.createWithPath {
+        (NSHomeDirectory() + "/Documents/user_prefs.preferences_pb").toPath()
+    }
 }
 
 fun getDatabaseBuilder(): RoomDatabase.Builder<ComicTrackerDatabase> {
