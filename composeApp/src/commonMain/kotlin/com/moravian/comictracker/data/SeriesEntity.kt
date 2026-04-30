@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity
 data class SeriesEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val comicvineId: Int,
+    val metronId: Int,
     val title: String,
     val publisher: String? = null,
     val coverImageUrl: String? = null

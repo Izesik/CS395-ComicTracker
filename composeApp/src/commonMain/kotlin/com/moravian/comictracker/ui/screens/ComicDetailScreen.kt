@@ -47,9 +47,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.ComicTrackerDatabase
-import com.moravian.comictracker.network.ComicVineCharacterRef
-import com.moravian.comictracker.network.ComicVineIssue
-import com.moravian.comictracker.network.ComicVineVolume
+import com.moravian.comictracker.network.MetronIssueSummary
+import com.moravian.comictracker.network.MetronSeries
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailUiState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailViewModel
@@ -62,12 +61,12 @@ private val OverlayDark = Color.Black.copy(alpha = 0.55f)
 
 @Composable
 fun ComicDetailScreen(
-    volumeId: Int,
+    seriesId: Int,
     onBack: () -> Unit,
     database: ComicTrackerDatabase,
     onIssueClick: (Int) -> Unit = {},
-    onViewOnComicVine: () -> Unit = {},
-    viewModel: ComicDetailViewModel = viewModel(factory = ComicDetailViewModel.factory(volumeId, database))
+    onViewOnMetron: () -> Unit = {},
+    viewModel: ComicDetailViewModel = viewModel(factory = ComicDetailViewModel.factory(seriesId, database))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val addState by viewModel.addState.collectAsStateWithLifecycle()
@@ -91,13 +90,13 @@ fun ComicDetailScreen(
                 TopBackButton(onBack = onBack)
             }
             is ComicDetailUiState.Success -> DetailContent(
-                volume = state.volume,
+                series = state.series,
                 issues = issues,
                 onBack = onBack,
                 addState = addState,
                 onAddToCollection = { viewModel.addToCollection() },
                 onIssueClick = onIssueClick,
-                onViewOnComicVine = onViewOnComicVine
+                onViewOnMetron = onViewOnMetron
             )
         }
     }
@@ -105,13 +104,13 @@ fun ComicDetailScreen(
 
 @Composable
 private fun DetailContent(
-    volume: ComicVineVolume,
-    issues: List<ComicVineIssue>,
+    series: MetronSeries,
+    issues: List<MetronIssueSummary>,
     onBack: () -> Unit,
     addState: AddCollectionState,
     onAddToCollection: () -> Unit,
     onIssueClick: (Int) -> Unit,
-    onViewOnComicVine: () -> Unit
+    onViewOnMetron: () -> Unit
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         // ── Hero image ────────────────────────────────────────────────────
@@ -122,7 +121,7 @@ private fun DetailContent(
                     .height(340.dp)
             ) {
                 AsyncImage(
-                    model = volume.image?.originalUrl ?: volume.image?.mediumUrl,
+                    model = series.image,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -152,8 +151,8 @@ private fun DetailContent(
                         modifier = Modifier.width(88.dp).height(124.dp)
                     ) {
                         AsyncImage(
-                            model = volume.image?.mediumUrl,
-                            contentDescription = volume.name,
+                            model = series.image,
+                            contentDescription = series.name,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -163,13 +162,13 @@ private fun DetailContent(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "VOLUME",
+                            text = "SERIES",
                             style = MaterialTheme.typography.labelSmall,
                             color = TextSecondary,
                             letterSpacing = androidx.compose.ui.unit.TextUnit(1.5f, androidx.compose.ui.unit.TextUnitType.Sp)
                         )
                         Text(
-                            text = volume.name,
+                            text = series.name,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,
@@ -177,13 +176,13 @@ private fun DetailContent(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = buildHeroMeta(volume.startYear, volume.publisher?.name),
+                            text = buildHeroMeta(series.yearBegan?.toString(), series.publisher?.name),
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
-                        if (volume.issueCount > 0) {
+                        if (issues.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(4.dp))
-                            IssueBadge(count = volume.issueCount)
+                            IssueBadge(count = issues.size)
                         }
                     }
                 }
@@ -191,8 +190,7 @@ private fun DetailContent(
         }
 
         // ── Description ───────────────────────────────────────────────────
-        val summary = volume.description?.takeIf { it.isNotBlank() }?.stripHtml()
-            ?: volume.deck?.takeIf { it.isNotBlank() }
+        val summary = series.description?.takeIf { it.isNotBlank() }?.stripHtml()
         summary?.let {
             item {
                 Text(
@@ -209,88 +207,7 @@ private fun DetailContent(
             }
         }
 
-        // ── Credits ───────────────────────────────────────────────────────
-        val credits = volume.personCredits.take(3)
-        if (credits.isNotEmpty()) {
-            item {
-                HorizontalDivider(
-                    color = Color.White.copy(alpha = 0.12f),
-                    modifier = Modifier.background(ScreenBackground)
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(ScreenBackground)
-                        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = "Credits",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = TextPrimary,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                    credits.forEach { person ->
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = person.name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextPrimary,
-                                fontWeight = FontWeight.Medium
-                            )
-                            person.role?.takeIf { it.isNotBlank() }?.let { role ->
-                                Text(
-                                    text = role,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ── Characters ────────────────────────────────────────────────────
-        if (volume.characters.isNotEmpty()) {
-            item {
-                HorizontalDivider(
-                    color = Color.White.copy(alpha = 0.12f),
-                    modifier = Modifier.background(ScreenBackground)
-                )
-                Text(
-                    text = "Characters",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = TextPrimary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(ScreenBackground)
-                        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)
-                )
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(ScreenBackground),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(volume.characters.take(20)) { character ->
-                        CharacterChip(character)
-                    }
-                }
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(14.dp)
-                        .background(ScreenBackground)
-                )
-            }
-        }
-
-          // ── Add to collection ─────────────────────────────────────────────
+        // ── Add to collection ─────────────────────────────────────────────
         item {
             HorizontalDivider(
                 color = Color.White.copy(alpha = 0.12f),
@@ -337,7 +254,7 @@ private fun DetailContent(
             }
         }
 
-        // ── View on ComicVine ─────────────────────────────────────────────
+        // ── View on Metron ────────────────────────────────────────────────
         item {
             Box(
                 modifier = Modifier
@@ -347,11 +264,11 @@ private fun DetailContent(
                     .padding(bottom = 8.dp)
             ) {
                 Button(
-                    onClick = onViewOnComicVine,
+                    onClick = onViewOnMetron,
                     colors = ButtonDefaults.outlinedButtonColors(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("View on ComicVine")
+                    Text("View on Metron")
                 }
             }
         }
@@ -409,7 +326,7 @@ private fun DetailContent(
 
 @Composable
 private fun IssueGridCell(
-    issue: ComicVineIssue,
+    issue: MetronIssueSummary,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -424,8 +341,8 @@ private fun IssueGridCell(
             modifier = Modifier.fillMaxSize()
         ) {
             AsyncImage(
-                model = issue.image?.mediumUrl,
-                contentDescription = "#${issue.issueNumber}",
+                model = issue.image,
+                contentDescription = "#${issue.number}",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
@@ -445,7 +362,7 @@ private fun IssueGridCell(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "#${issue.issueNumber}",
+                text = "#${issue.number}",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
@@ -492,27 +409,6 @@ private fun TopBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
             tint = TextPrimary
         )
     }
-}
-
-@Composable
-private fun CharacterChip(character: ComicVineCharacterRef) {
-    SuggestionChip(
-        onClick = {},
-        label = {
-            Text(
-                text = character.name,
-                style = MaterialTheme.typography.labelMedium
-            )
-        },
-        colors = SuggestionChipDefaults.suggestionChipColors(
-            containerColor = Color.White.copy(alpha = 0.08f),
-            labelColor = TextPrimary
-        ),
-        border = SuggestionChipDefaults.suggestionChipBorder(
-            enabled = true,
-            borderColor = Color.White.copy(alpha = 0.15f)
-        )
-    )
 }
 
 private fun buildHeroMeta(startYear: String?, publisher: String?): String =

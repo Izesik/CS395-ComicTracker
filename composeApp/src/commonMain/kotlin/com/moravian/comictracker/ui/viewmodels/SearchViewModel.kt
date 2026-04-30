@@ -31,8 +31,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
-import com.moravian.comictracker.network.ComicRepository
-import com.moravian.comictracker.network.ComicVineSearchResult
+import com.moravian.comictracker.network.MetronApi
+import com.moravian.comictracker.network.MetronSeriesSummary
 import kotlinx.coroutines.launch
 
 private val CardBackground = Color(0xFF1E1E1E)
@@ -43,12 +43,12 @@ private val TextMuted = Color(0xFF888888)
 sealed class SearchUiState {
     data object Idle : SearchUiState()
     data object Loading : SearchUiState()
-    data class Success(val results: List<ComicVineSearchResult>) : SearchUiState()
+    data class Success(val results: List<MetronSeriesSummary>) : SearchUiState()
     data class Error(val message: String) : SearchUiState()
 }
 
 class SearchViewModel : ViewModel() {
-    private val repo = ComicRepository()
+    private val metron = MetronApi()
 
     var searchQuery by mutableStateOf("")
         private set
@@ -66,7 +66,7 @@ class SearchViewModel : ViewModel() {
         viewModelScope.launch {
             uiState = SearchUiState.Loading
             try {
-                val results = repo.searchSeries(searchQuery)
+                val results = metron.searchSeries(searchQuery).results
                 uiState = SearchUiState.Success(results)
             } catch (e: Exception) {
                 uiState = SearchUiState.Error(e.message ?: "Search failed")
@@ -77,7 +77,7 @@ class SearchViewModel : ViewModel() {
 
 @Composable
 fun SeriesSearchCard(
-    result: ComicVineSearchResult,
+    result: MetronSeriesSummary,
     onClick: () -> Unit
 ) {
     Row(
@@ -96,19 +96,21 @@ fun SeriesSearchCard(
                 .background(CoverPlaceholder),
             contentAlignment = Alignment.Center
         ) {
-            if (result.image?.smallUrl != null) {
+            if (result.image != null) {
                 AsyncImage(
-                    model = result.image.smallUrl,
+                    model = result.image,
                     contentDescription = result.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize()
                 )
             } else {
-                Icon(
-                    imageVector = Icons.Default.MenuBook,
-                    contentDescription = null,
-                    tint = TextMuted,
-                    modifier = Modifier.padding(16.dp)
+                Text(
+                    text = result.name,
+                    color = TextMuted,
+                    fontSize = 9.sp,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(6.dp)
                 )
             }
         }
@@ -133,9 +135,9 @@ fun SeriesSearchCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            result.startYear?.let {
+            result.yearBegan?.let {
                 Text(
-                    text = it,
+                    text = it.toString(),
                     color = TextMuted,
                     fontSize = 12.sp
                 )

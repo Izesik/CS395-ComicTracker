@@ -2,64 +2,57 @@ package com.moravian.comictracker.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.moravian.comictracker.network.ComicRepository
-import com.moravian.comictracker.network.ComicVineIssue
-import com.moravian.comictracker.network.ComicVineVolume
+import com.moravian.comictracker.network.MetronApi
+import com.moravian.comictracker.network.MetronIssueSummary
+import com.moravian.comictracker.network.MetronSeriesSummary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-enum class HomeTab { Volumes, Issues }
+enum class HomeTab { Series, Issues }
 
 sealed class HomeUiState {
     data object Loading : HomeUiState()
-    data class VolumesSuccess(val volumes: List<ComicVineVolume>) : HomeUiState()
-    data class IssuesSuccess(val issues: List<ComicVineIssue>) : HomeUiState()
+    data class SeriesSuccess(val series: List<MetronSeriesSummary>) : HomeUiState()
+    data class IssuesSuccess(val issues: List<MetronIssueSummary>) : HomeUiState()
     data class Error(val message: String) : HomeUiState()
 }
 
-// Client-side safety net: drop anything explicitly tagged as Mature (ComicVine results)
-private val ComicVineVolume.isMature get() =
-    contentRating?.lowercase()?.contains("mature") == true
-
-private val ComicVineIssue.isMature get() =
-    contentRating?.lowercase()?.contains("mature") == true
-
 class HomeViewModel : ViewModel() {
-    private val repo = ComicRepository()
+    private val metron = MetronApi()
 
-    private val _selectedTab = MutableStateFlow(HomeTab.Volumes)
+    private val _selectedTab = MutableStateFlow(HomeTab.Series)
     val selectedTab: StateFlow<HomeTab> = _selectedTab.asStateFlow()
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    private var cachedVolumes: List<ComicVineVolume>? = null
-    private var cachedIssues: List<ComicVineIssue>? = null
+    private var cachedSeries: List<MetronSeriesSummary>? = null
+    private var cachedIssues: List<MetronIssueSummary>? = null
 
     init {
-        loadVolumes()
+        loadSeries()
     }
 
     fun selectTab(tab: HomeTab) {
         if (_selectedTab.value == tab) return
         _selectedTab.value = tab
         when (tab) {
-            HomeTab.Volumes -> cachedVolumes?.let { _uiState.value = HomeUiState.VolumesSuccess(it) } ?: loadVolumes()
+            HomeTab.Series -> cachedSeries?.let { _uiState.value = HomeUiState.SeriesSuccess(it) } ?: loadSeries()
             HomeTab.Issues -> cachedIssues?.let { _uiState.value = HomeUiState.IssuesSuccess(it) } ?: loadIssues()
         }
     }
 
-    private fun loadVolumes() {
+    private fun loadSeries() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val safe = repo.getHomeVolumes().filter { !it.isMature }
-                cachedVolumes = safe
-                _uiState.value = HomeUiState.VolumesSuccess(safe)
+                val series = metron.getPopularSeries().results
+                cachedSeries = series
+                _uiState.value = HomeUiState.SeriesSuccess(series)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(e.message ?: "Failed to load volumes")
+                _uiState.value = HomeUiState.Error(e.message ?: "Failed to load series")
             }
         }
     }
@@ -68,9 +61,9 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val safe = repo.getHomeIssues().filter { !it.isMature }
-                cachedIssues = safe
-                _uiState.value = HomeUiState.IssuesSuccess(safe)
+                val issues = metron.getRecentIssues().results.filter { it.series?.name?.isNotBlank() == true }
+                cachedIssues = issues
+                _uiState.value = HomeUiState.IssuesSuccess(issues)
             } catch (e: Exception) {
                 _uiState.value = HomeUiState.Error(e.message ?: "Failed to load issues")
             }

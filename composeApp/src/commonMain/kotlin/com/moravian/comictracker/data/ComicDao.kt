@@ -16,11 +16,11 @@ interface ComicDao {
     @Query("SELECT * FROM SeriesEntity")
     fun getAllSeries(): Flow<List<SeriesEntity>>
 
-    @Query("SELECT * FROM SeriesEntity WHERE comicvineId = :comicvineId LIMIT 1")
-    suspend fun getSeriesByComicvineId(comicvineId: Int): SeriesEntity?
+    @Query("SELECT * FROM SeriesEntity WHERE metronId = :metronId LIMIT 1")
+    suspend fun getSeriesByMetronId(metronId: Int): SeriesEntity?
 
-    @Query("SELECT * FROM ComicIssueEntity WHERE comicvineId = :comicvineId LIMIT 1")
-    suspend fun getIssueByComicvineId(comicvineId: Int): ComicIssueEntity?
+    @Query("SELECT * FROM ComicIssueEntity WHERE metronId = :metronId LIMIT 1")
+    suspend fun getIssueByMetronId(metronId: Int): ComicIssueEntity?
 
     @Query("SELECT * FROM ComicIssueEntity WHERE seriesId = :seriesId")
     fun getComicIssuesForSeries(seriesId: Long): Flow<List<ComicIssueEntity>>

@@ -5,18 +5,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.moravian.comictracker.network.ComicRepository
+import com.moravian.comictracker.network.MetronApi
 import kotlinx.coroutines.launch
 
 sealed class BarcodeScanState {
     data object Scanning : BarcodeScanState()
     data class Loading(val upc: String) : BarcodeScanState()
-    data class Found(val cvIssueId: Int) : BarcodeScanState()
+    data class Found(val issueId: Int) : BarcodeScanState()
     data object NotFound : BarcodeScanState()
 }
 
 class BarcodeScanViewModel : ViewModel() {
-    private val repo = ComicRepository()
+    private val metron = MetronApi()
 
     var state by mutableStateOf<BarcodeScanState>(BarcodeScanState.Scanning)
         private set
@@ -25,8 +25,8 @@ class BarcodeScanViewModel : ViewModel() {
         if (state !is BarcodeScanState.Scanning) return
         state = BarcodeScanState.Loading(upc)
         viewModelScope.launch {
-            val cvId = repo.lookupByUpc(upc)
-            state = if (cvId != null) BarcodeScanState.Found(cvId) else BarcodeScanState.NotFound
+            val issueId = metron.searchByUpc(upc).results.firstOrNull()?.id
+            state = if (issueId != null) BarcodeScanState.Found(issueId) else BarcodeScanState.NotFound
         }
     }
 

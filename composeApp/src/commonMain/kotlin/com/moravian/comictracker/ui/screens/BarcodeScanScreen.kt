@@ -29,7 +29,7 @@ expect fun BarcodeCameraView(onBarcodeDetected: (String) -> Unit, onDismiss: () 
 
 @Composable
 fun BarcodeScanRoute(
-    onIssueFound: (cvIssueId: Int) -> Unit,
+    onIssueFound: (issueId: Int) -> Unit,
     onDismiss: () -> Unit,
     viewModel: BarcodeScanViewModel = viewModel()
 ) {
@@ -37,7 +37,7 @@ fun BarcodeScanRoute(
 
     LaunchedEffect(scanState) {
         if (scanState is BarcodeScanState.Found) {
-            onIssueFound(scanState.cvIssueId)
+            onIssueFound(scanState.issueId)
         }
     }
 
@@ -93,7 +93,7 @@ private fun NotFoundOverlay(onRetry: () -> Unit, onDismiss: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "This barcode wasn't found in Metron or ComicVine.",
+                text = "This barcode wasn't found in Metron.",
                 color = Color(0xFFAAAAAA),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center

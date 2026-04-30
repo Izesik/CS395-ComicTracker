@@ -55,10 +55,34 @@ class MetronApi {
         return response.body()
     }
 
-    // Ongoing series sorted by most recently modified — best proxy for "active/popular"
+    suspend fun getSeries(id: Int): MetronSeries {
+        val response = client.get("$METRON_BASE_URL/series/$id/")
+        if (!response.status.isSuccess()) throw Exception("Metron error: ${response.status}")
+        return response.body()
+    }
+
+    suspend fun getIssue(id: Int): MetronIssue {
+        val response = client.get("$METRON_BASE_URL/issue/$id/")
+        if (!response.status.isSuccess()) throw Exception("Metron error: ${response.status}")
+        return response.body()
+    }
+
+    suspend fun getIssuesBySeries(
+        seriesId: Int,
+        limit: Int = 100
+    ): MetronPagedResponse<MetronIssueSummary> {
+        val response = client.get("$METRON_BASE_URL/issue/") {
+            parameter("series_id", seriesId)
+            parameter("ordering", "cover_date")
+            parameter("limit", limit)
+        }
+        if (!response.status.isSuccess()) throw Exception("Metron error: ${response.status}")
+        return response.body()
+    }
+
+    // Recently modified series — best proxy for "active/popular"
     suspend fun getPopularSeries(limit: Int = 30): MetronPagedResponse<MetronSeriesSummary> {
         val response = client.get("$METRON_BASE_URL/series/") {
-            parameter("series_type", 1)   // 1 = Ongoing Series
             parameter("ordering", "-modified")
             parameter("limit", limit)
         }

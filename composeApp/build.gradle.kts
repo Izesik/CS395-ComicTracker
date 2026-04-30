@@ -6,30 +6,20 @@ val localProps = Properties().apply {
     load(rootProject.file("local.properties").inputStream())
 }
 
-val apiKey: String = localProps.getProperty("API_KEY") ?: ""
 val metronUsername: String = localProps.getProperty("METRON_USERNAME") ?: ""
 val metronPassword: String = localProps.getProperty("METRON_PASSWORD") ?: ""
 
 // Claude wrote this, I couldn't figure out how to do secrets correctly so ggs
 val generateApiConfig by tasks.registering {
     val outputDir = layout.buildDirectory.dir("generated/kotlin/commonMain")
-    inputs.property("apiKey", apiKey)
     inputs.property("metronUsername", metronUsername)
     inputs.property("metronPassword", metronPassword)
     outputs.dir(outputDir)
     doLast {
-        val key = inputs.properties["apiKey"] as String
-        val cvFile = outputDir.get().file("com/moravian/comictracker/network/ApiConfig.kt").asFile
-        cvFile.parentFile.mkdirs()
-        cvFile.writeText(
-            "package com.moravian.comictracker.network\n\n" +
-            "internal object ApiConfig {\n" +
-            "    const val API_KEY = \"$key\"\n" +
-            "}\n"
-        )
         val mUser = inputs.properties["metronUsername"] as String
         val mPass = inputs.properties["metronPassword"] as String
         val metronFile = outputDir.get().file("com/moravian/comictracker/network/MetronConfig.kt").asFile
+        metronFile.parentFile.mkdirs()
         metronFile.writeText(
             "package com.moravian.comictracker.network\n\n" +
             "internal object MetronConfig {\n" +
@@ -130,7 +120,6 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-        buildConfigField("String", "API_KEY", "\"${localProps["API_KEY"]}\"")
     }
     packaging {
         resources {

@@ -36,8 +36,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import com.moravian.comictracker.network.ComicVineIssue
-import com.moravian.comictracker.network.ComicVineVolume
+import com.moravian.comictracker.network.MetronIssueSummary
+import com.moravian.comictracker.network.MetronSeriesSummary
 import com.moravian.comictracker.ui.viewmodels.HomeTab
 import com.moravian.comictracker.ui.viewmodels.HomeUiState
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
@@ -92,7 +92,7 @@ fun HomeScreen(
                     )
                 }
             }
-            is HomeUiState.VolumesSuccess -> {
+            is HomeUiState.SeriesSuccess -> {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -100,8 +100,8 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(state.volumes) { volume ->
-                        VolumeCard(volume = volume, onClick = { onVolumeClick(volume.id) })
+                    items(state.series) { series ->
+                        SeriesCard(series = series, onClick = { onVolumeClick(series.id) })
                     }
                 }
             }
@@ -162,33 +162,49 @@ private fun TabLabel(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun VolumeCard(volume: ComicVineVolume, onClick: () -> Unit) {
+private fun SeriesCard(series: MetronSeriesSummary, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-        AsyncImage(
-            model = volume.image?.mediumUrl,
-            contentDescription = volume.name,
-            contentScale = ContentScale.Crop,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(0.67f)
                 .clip(RoundedCornerShape(6.dp))
-                .background(CardBackground)
-        )
+                .background(CardBackground),
+            contentAlignment = Alignment.Center
+        ) {
+            if (series.image != null) {
+                AsyncImage(
+                    model = series.image,
+                    contentDescription = series.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text(
+                    text = series.name,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(6.dp)
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(5.dp))
         Text(
-            text = volume.name,
+            text = series.name,
             style = MaterialTheme.typography.labelMedium,
             color = TextPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        if (volume.startYear != null) {
+        if (series.yearBegan != null) {
             Text(
-                text = volume.startYear,
+                text = series.yearBegan.toString(),
                 style = MaterialTheme.typography.labelSmall,
                 color = TextMuted,
                 maxLines = 1
@@ -198,7 +214,7 @@ private fun VolumeCard(volume: ComicVineVolume, onClick: () -> Unit) {
 }
 
 @Composable
-private fun IssueCard(issue: ComicVineIssue, onClick: () -> Unit) {
+private fun IssueCard(issue: MetronIssueSummary, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -212,8 +228,8 @@ private fun IssueCard(issue: ComicVineIssue, onClick: () -> Unit) {
                 .background(CardBackground)
         ) {
             AsyncImage(
-                model = issue.image?.mediumUrl,
-                contentDescription = issue.volume?.name ?: issue.name,
+                model = issue.image,
+                contentDescription = issue.series?.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
@@ -226,7 +242,7 @@ private fun IssueCard(issue: ComicVineIssue, onClick: () -> Unit) {
                     .padding(horizontal = 5.dp, vertical = 2.dp)
             ) {
                 Text(
-                    text = "#${issue.issueNumber}",
+                    text = "#${issue.number}",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextPrimary,
                     fontWeight = FontWeight.SemiBold
@@ -235,7 +251,7 @@ private fun IssueCard(issue: ComicVineIssue, onClick: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(5.dp))
         Text(
-            text = issue.volume?.name ?: issue.name ?: "",
+            text = issue.series?.name ?: "",
             style = MaterialTheme.typography.labelMedium,
             color = TextPrimary,
             maxLines = 1,

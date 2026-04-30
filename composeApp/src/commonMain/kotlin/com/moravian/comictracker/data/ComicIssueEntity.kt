@@ -16,11 +16,10 @@ import androidx.room.PrimaryKey
 )
 data class ComicIssueEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val comicvineId: Int,
+    val metronId: Int,
     val seriesId: Long,
     val issueNumber: Int,
     val title: String,
     val readStatus: ReadStatus = ReadStatus.TO_READ,
     val coverImageUrl: String? = null
 )
-

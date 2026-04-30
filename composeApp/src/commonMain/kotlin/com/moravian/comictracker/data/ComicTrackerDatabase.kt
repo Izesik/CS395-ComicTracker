@@ -8,7 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.IO
 
-@Database(entities = [SeriesEntity::class, ComicIssueEntity::class, CreatorEntity::class], version = 2)
+@Database(entities = [SeriesEntity::class, ComicIssueEntity::class, CreatorEntity::class], version = 3)
 @ConstructedBy(ComicTrackerConstructor::class) // Add this annotation
 abstract class ComicTrackerDatabase : RoomDatabase() {
     abstract fun comicDao(): ComicDao

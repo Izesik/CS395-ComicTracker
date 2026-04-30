@@ -134,22 +134,22 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     val searchViewModel: SearchViewModel = viewModel { SearchViewModel() }
                     SearchScreen(
                         viewModel = searchViewModel,
-                        onComicClick = { volumeId ->
-                            navController.navigate("comic_detail/$volumeId")
+                        onComicClick = { seriesId ->
+                            navController.navigate("comic_detail/$seriesId")
                         }
                     )
                 }
                 composable(
-                    route = "comic_detail/{volumeId}",
-                    arguments = listOf(navArgument("volumeId") { type = NavType.StringType })
+                    route = "comic_detail/{seriesId}",
+                    arguments = listOf(navArgument("seriesId") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val volumeId = backStackEntry.savedStateHandle.get<String>("volumeId")?.toIntOrNull() ?: return@composable
+                    val seriesId = backStackEntry.savedStateHandle.get<String>("seriesId")?.toIntOrNull() ?: return@composable
                     ComicDetailScreen(
-                        volumeId = volumeId,
+                        seriesId = seriesId,
                         onBack = { navController.popBackStack() },
                         database = database,
                         onIssueClick = { navController.navigate("issue_detail/$it") },
-                        onViewOnComicVine = { navController.navigate("webview/volume/$volumeId") }
+                        onViewOnMetron = { navController.navigate("webview/series/$seriesId") }
                     )
                 }
                 composable(
@@ -161,14 +161,14 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                         issueId = issueId,
                         onBack = { navController.popBackStack() },
                         database = database,
-                        onViewOnComicVine = { navController.navigate("webview/issue/$issueId") }
+                        onViewOnMetron = { navController.navigate("webview/issue/$issueId") }
                     )
                 }
                 composable("barcode_scan") {
                     BarcodeScanRoute(
-                        onIssueFound = { cvId ->
+                        onIssueFound = { issueId ->
                             navController.popBackStack()
-                            navController.navigate("issue_detail/$cvId")
+                            navController.navigate("issue_detail/$issueId")
                         },
                         onDismiss = { navController.popBackStack() }
                     )
@@ -183,13 +183,13 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     val type = backStackEntry.arguments?.getString("type") ?: return@composable
                     val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: return@composable
                     val url = when (type) {
-                        "volume" -> "https://comicvine.gamespot.com/volume/4050-$id/"
-                        "issue" -> "https://comicvine.gamespot.com/issue/4000-$id/"
+                        "series" -> "https://metron.cloud/series/$id/"
+                        "issue" -> "https://metron.cloud/issue/$id/"
                         else -> return@composable
                     }
                     ComicWebViewScreen(
                         url = url,
-                        title = "ComicVine",
+                        title = "Metron",
                         onBack = { navController.popBackStack() }
                     )
                 }

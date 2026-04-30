@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Comic Tracker</string>
+    <string name="app_name">ComicShelf</string>
     <string name="searching_comics">Search for comics...</string>
     <string name="no_results_found">No comics found for %1$s</string>
     <string name="home_label">Home</string>
