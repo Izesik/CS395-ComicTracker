@@ -1,0 +1,47 @@
+package com.moravian.comictracker.network
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class MetronPagedResponse<T>(
+    val count: Int,
+    val next: String? = null,
+    val previous: String? = null,
+    val results: List<T>
+)
+
+@Serializable
+data class MetronSeriesSummary(
+    val id: Int,
+    val name: String,
+    val publisher: MetronPublisherRef? = null,
+    @SerialName("year_began") val yearBegan: Int? = null,
+    val image: String? = null,
+    @SerialName("cv_id") val cvId: Int? = null
+)
+
+@Serializable
+data class MetronIssueSummary(
+    val id: Int,
+    val series: MetronSeriesRef? = null,
+    val number: String = "",
+    @SerialName("cover_date") val coverDate: String? = null,
+    val image: String? = null,
+    val upc: String? = null,
+    @SerialName("cv_id") val cvId: Int? = null
+)
+
+@Serializable
+data class MetronPublisherRef(
+    val id: Int,
+    val name: String
+)
+
+@Serializable
+data class MetronSeriesRef(
+    val id: Int,
+    val name: String,
+    val volume: Int? = null,
+    @SerialName("year_began") val yearBegan: Int? = null
+)

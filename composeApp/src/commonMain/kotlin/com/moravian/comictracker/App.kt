@@ -4,10 +4,13 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -29,6 +32,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.data.UserPreferencesRepository
+import com.moravian.comictracker.ui.screens.BarcodeScanRoute
 import com.moravian.comictracker.ui.screens.CollectionScreen
 import com.moravian.comictracker.ui.screens.ComicDetailScreen
 import com.moravian.comictracker.ui.screens.ComicWebViewScreen
@@ -45,7 +49,7 @@ sealed class Screen(val route: String, val label: String) {
     object Search : Screen("search", "Search")
 }
 
-private val hideBottomBarPrefixes = listOf("comic_detail", "issue_detail", "webview")
+private val hideBottomBarPrefixes = listOf("comic_detail", "issue_detail", "webview", "barcode_scan")
 
 @Composable
 fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesRepository) {
@@ -57,9 +61,26 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
         val navItems = listOf(Screen.Home, Screen.MyCollection, Screen.Search)
         val showBottomBar = hideBottomBarPrefixes.none { currentDestination?.route?.startsWith(it) == true }
 
+        val showFab = currentDestination?.route?.startsWith("barcode_scan") != true
+
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets.safeDrawing,
+            floatingActionButton = {
+                if (showFab) {
+                    FloatingActionButton(
+                        onClick = { navController.navigate("barcode_scan") },
+                        shape = CircleShape,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.QrCodeScanner,
+                            contentDescription = "Scan barcode"
+                        )
+                    }
+                }
+            },
             bottomBar = {
                 if (showBottomBar) {
                     NavigationBar {
@@ -141,6 +162,15 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                         onBack = { navController.popBackStack() },
                         database = database,
                         onViewOnComicVine = { navController.navigate("webview/issue/$issueId") }
+                    )
+                }
+                composable("barcode_scan") {
+                    BarcodeScanRoute(
+                        onIssueFound = { cvId ->
+                            navController.popBackStack()
+                            navController.navigate("issue_detail/$cvId")
+                        },
+                        onDismiss = { navController.popBackStack() }
                     )
                 }
                 composable(

@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
-import com.moravian.comictracker.network.ComicVineApi
+import com.moravian.comictracker.network.ComicRepository
 import com.moravian.comictracker.network.ComicVineSearchResult
 import kotlinx.coroutines.launch
 
@@ -48,7 +48,7 @@ sealed class SearchUiState {
 }
 
 class SearchViewModel : ViewModel() {
-    private val api = ComicVineApi()
+    private val repo = ComicRepository()
 
     var searchQuery by mutableStateOf("")
         private set
@@ -66,7 +66,7 @@ class SearchViewModel : ViewModel() {
         viewModelScope.launch {
             uiState = SearchUiState.Loading
             try {
-                val results = api.search(searchQuery).results
+                val results = repo.searchSeries(searchQuery)
                 uiState = SearchUiState.Success(results)
             } catch (e: Exception) {
                 uiState = SearchUiState.Error(e.message ?: "Search failed")

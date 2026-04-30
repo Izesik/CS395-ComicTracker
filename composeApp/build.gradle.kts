@@ -7,20 +7,34 @@ val localProps = Properties().apply {
 }
 
 val apiKey: String = localProps.getProperty("API_KEY") ?: ""
+val metronUsername: String = localProps.getProperty("METRON_USERNAME") ?: ""
+val metronPassword: String = localProps.getProperty("METRON_PASSWORD") ?: ""
 
-// Claude wrote ts, I couldn't figure out how to do secrets correctly so ggs
+// Claude wrote this, I couldn't figure out how to do secrets correctly so ggs
 val generateApiConfig by tasks.registering {
     val outputDir = layout.buildDirectory.dir("generated/kotlin/commonMain")
     inputs.property("apiKey", apiKey)
+    inputs.property("metronUsername", metronUsername)
+    inputs.property("metronPassword", metronPassword)
     outputs.dir(outputDir)
     doLast {
         val key = inputs.properties["apiKey"] as String
-        val file = outputDir.get().file("com/moravian/comictracker/network/ApiConfig.kt").asFile
-        file.parentFile.mkdirs()
-        file.writeText(
+        val cvFile = outputDir.get().file("com/moravian/comictracker/network/ApiConfig.kt").asFile
+        cvFile.parentFile.mkdirs()
+        cvFile.writeText(
             "package com.moravian.comictracker.network\n\n" +
             "internal object ApiConfig {\n" +
             "    const val API_KEY = \"$key\"\n" +
+            "}\n"
+        )
+        val mUser = inputs.properties["metronUsername"] as String
+        val mPass = inputs.properties["metronPassword"] as String
+        val metronFile = outputDir.get().file("com/moravian/comictracker/network/MetronConfig.kt").asFile
+        metronFile.writeText(
+            "package com.moravian.comictracker.network\n\n" +
+            "internal object MetronConfig {\n" +
+            "    const val USERNAME = \"$mUser\"\n" +
+            "    const val PASSWORD = \"$mPass\"\n" +
             "}\n"
         )
     }
@@ -58,6 +72,10 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.androidx.camera.camera2)
+            implementation(libs.androidx.camera.lifecycle)
+            implementation(libs.androidx.camera.view)
+            implementation(libs.mlkit.barcode.scanning)
         }
         commonMain {
             kotlin.srcDir(generateApiConfig)
@@ -76,6 +94,7 @@ kotlin {
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.auth)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.kotlinx.serialization.json)

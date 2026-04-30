@@ -2,7 +2,7 @@ package com.moravian.comictracker.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.moravian.comictracker.network.ComicVineApi
+import com.moravian.comictracker.network.ComicRepository
 import com.moravian.comictracker.network.ComicVineIssue
 import com.moravian.comictracker.network.ComicVineVolume
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ sealed class HomeUiState {
     data class Error(val message: String) : HomeUiState()
 }
 
-// Client-side safety net: drop anything the API tagged as Mature
+// Client-side safety net: drop anything explicitly tagged as Mature (ComicVine results)
 private val ComicVineVolume.isMature get() =
     contentRating?.lowercase()?.contains("mature") == true
 
@@ -27,7 +27,7 @@ private val ComicVineIssue.isMature get() =
     contentRating?.lowercase()?.contains("mature") == true
 
 class HomeViewModel : ViewModel() {
-    private val api = ComicVineApi()
+    private val repo = ComicRepository()
 
     private val _selectedTab = MutableStateFlow(HomeTab.Volumes)
     val selectedTab: StateFlow<HomeTab> = _selectedTab.asStateFlow()
@@ -39,23 +39,23 @@ class HomeViewModel : ViewModel() {
     private var cachedIssues: List<ComicVineIssue>? = null
 
     init {
-        loadPopularVolumes()
+        loadVolumes()
     }
 
     fun selectTab(tab: HomeTab) {
         if (_selectedTab.value == tab) return
         _selectedTab.value = tab
         when (tab) {
-            HomeTab.Volumes -> cachedVolumes?.let { _uiState.value = HomeUiState.VolumesSuccess(it) } ?: loadPopularVolumes()
-            HomeTab.Issues -> cachedIssues?.let { _uiState.value = HomeUiState.IssuesSuccess(it) } ?: loadRecentIssues()
+            HomeTab.Volumes -> cachedVolumes?.let { _uiState.value = HomeUiState.VolumesSuccess(it) } ?: loadVolumes()
+            HomeTab.Issues -> cachedIssues?.let { _uiState.value = HomeUiState.IssuesSuccess(it) } ?: loadIssues()
         }
     }
 
-    private fun loadPopularVolumes() {
+    private fun loadVolumes() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val safe = api.getPopularVolumes().results.filter { !it.isMature }
+                val safe = repo.getHomeVolumes().filter { !it.isMature }
                 cachedVolumes = safe
                 _uiState.value = HomeUiState.VolumesSuccess(safe)
             } catch (e: Exception) {
@@ -64,11 +64,11 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    private fun loadRecentIssues() {
+    private fun loadIssues() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val safe = api.getPopularIssues().results.filter { !it.isMature }
+                val safe = repo.getHomeIssues().filter { !it.isMature }
                 cachedIssues = safe
                 _uiState.value = HomeUiState.IssuesSuccess(safe)
             } catch (e: Exception) {
