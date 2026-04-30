@@ -10,11 +10,18 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
 private const val METRON_BASE_URL = "https://metron.cloud/api"
 
 class MetronApi {
+    private companion object {
+        private val coverCache = mutableMapOf<Int, String?>()
+        private val coverCacheLock = Mutex()
+    }
+
     private val client: HttpClient = createHttpClient {
         install(Auth) {
             basic {
@@ -75,6 +82,33 @@ class MetronApi {
             parameter("series_id", seriesId)
             parameter("ordering", "cover_date")
             parameter("limit", limit)
+        }
+        if (!response.status.isSuccess()) throw Exception("Metron error: ${response.status}")
+        return response.body()
+    }
+
+    suspend fun getFirstIssueCoverForSeries(seriesId: Int): String? {
+        val cached = coverCacheLock.withLock {
+            if (coverCache.containsKey(seriesId)) return@withLock coverCache[seriesId]
+            null
+        }
+        if (cached != null) return cached
+
+        val cover = searchFirstIssueBySeries(seriesId)
+            .results
+            .firstOrNull { !it.image.isNullOrBlank() }
+            ?.image
+
+        coverCacheLock.withLock {
+            coverCache[seriesId] = cover
+        }
+        return cover
+    }
+
+    private suspend fun searchFirstIssueBySeries(seriesId: Int): MetronPagedResponse<MetronIssueSummary> {
+        val response = client.get("$METRON_BASE_URL/issue/") {
+            parameter("series_id", seriesId)
+            parameter("number", "1")
         }
         if (!response.status.isSuccess()) throw Exception("Metron error: ${response.status}")
         return response.body()

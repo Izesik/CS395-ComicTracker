@@ -51,8 +51,32 @@ class HomeViewModel : ViewModel() {
                 val series = metron.getPopularSeries().results
                 cachedSeries = series
                 _uiState.value = HomeUiState.SeriesSuccess(series)
+                loadSeriesCovers(series)
             } catch (e: Exception) {
                 _uiState.value = HomeUiState.Error(e.message ?: "Failed to load series")
+            }
+        }
+    }
+
+    private suspend fun loadSeriesCovers(series: List<MetronSeriesSummary>) {
+        var enrichedSeries = series
+        series.take(MAX_SERIES_COVERS).forEach { item ->
+            if (!item.image.isNullOrBlank()) return@forEach
+
+            val cover = try {
+                metron.getFirstIssueCoverForSeries(item.id)
+            } catch (_: Exception) {
+                null
+            }
+
+            if (!cover.isNullOrBlank()) {
+                enrichedSeries = enrichedSeries.map { seriesItem ->
+                    if (seriesItem.id == item.id) seriesItem.copy(image = cover) else seriesItem
+                }
+                cachedSeries = enrichedSeries
+                if (_selectedTab.value == HomeTab.Series) {
+                    _uiState.value = HomeUiState.SeriesSuccess(enrichedSeries)
+                }
             }
         }
     }
@@ -68,5 +92,9 @@ class HomeViewModel : ViewModel() {
                 _uiState.value = HomeUiState.Error(e.message ?: "Failed to load issues")
             }
         }
+    }
+
+    private companion object {
+        const val MAX_SERIES_COVERS = 18
     }
 }

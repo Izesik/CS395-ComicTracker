@@ -61,17 +61,46 @@ class SearchViewModel : ViewModel() {
     }
 
     fun performSearch() {
-        if (searchQuery.isBlank()) return
+        val query = searchQuery.trim()
+        if (query.isBlank()) return
 
         viewModelScope.launch {
             uiState = SearchUiState.Loading
             try {
-                val results = metron.searchSeries(searchQuery).results
+                val results = metron.searchSeries(query).results
                 uiState = SearchUiState.Success(results)
+                loadSeriesCovers(query, results)
             } catch (e: Exception) {
                 uiState = SearchUiState.Error(e.message ?: "Search failed")
             }
         }
+    }
+
+    private suspend fun loadSeriesCovers(
+        query: String,
+        results: List<MetronSeriesSummary>
+    ) {
+        var enrichedResults = results
+        results.take(MAX_SERIES_COVERS).forEach { item ->
+            if (!item.image.isNullOrBlank() || searchQuery.trim() != query) return@forEach
+
+            val cover = try {
+                metron.getFirstIssueCoverForSeries(item.id)
+            } catch (_: Exception) {
+                null
+            }
+
+            if (!cover.isNullOrBlank() && searchQuery.trim() == query) {
+                enrichedResults = enrichedResults.map { result ->
+                    if (result.id == item.id) result.copy(image = cover) else result
+                }
+                uiState = SearchUiState.Success(enrichedResults)
+            }
+        }
+    }
+
+    private companion object {
+        const val MAX_SERIES_COVERS = 18
     }
 }
 

@@ -14,10 +14,12 @@ data class MetronPagedResponse<T>(
 @Serializable
 data class MetronSeriesSummary(
     val id: Int,
-    val name: String = "",
+    @SerialName("series") val name: String = "",
     val publisher: MetronPublisherRef? = null,
     @SerialName("year_began") val yearBegan: Int? = null,
     val image: String? = null,
+    val volume: Int? = null,
+    @SerialName("issue_count") val issueCount: Int? = null,
     @SerialName("cv_id") val cvId: Int? = null
 )
 
@@ -39,7 +41,7 @@ data class MetronSeries(
     val publisher: MetronPublisherRef? = null,
     @SerialName("year_began") val yearBegan: Int? = null,
     val image: String? = null,
-    val description: String? = null,
+    @SerialName("desc") val description: String? = null,
     @SerialName("cv_id") val cvId: Int? = null
 )
 
