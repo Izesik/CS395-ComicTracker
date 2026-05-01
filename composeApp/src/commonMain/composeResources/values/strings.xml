@@ -5,5 +5,5 @@
     <string name="home_label">Home</string>
     <string name="shelf_label">My Shelf</string>
     <string name="no_comics_on_shelf">No comics on your shelf yet</string>
-    <string name="metron_label">Metron</string>
+    <string name="comicvine_label">ComicVine</string>
 </resources>

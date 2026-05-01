@@ -31,8 +31,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
-import com.moravian.comictracker.network.MetronApi
-import com.moravian.comictracker.network.MetronSeriesSummary
+import com.moravian.comictracker.network.ComicVineApi
+import com.moravian.comictracker.network.ComicVineVolume
+import com.moravian.comictracker.network.coverUrl
 import kotlinx.coroutines.launch
 
 private val CardBackground = Color(0xFF1E1E1E)
@@ -43,12 +44,12 @@ private val TextMuted = Color(0xFF888888)
 sealed class SearchUiState {
     data object Idle : SearchUiState()
     data object Loading : SearchUiState()
-    data class Success(val results: List<MetronSeriesSummary>) : SearchUiState()
+    data class Success(val results: List<ComicVineVolume>) : SearchUiState()
     data class Error(val message: String) : SearchUiState()
 }
 
 class SearchViewModel : ViewModel() {
-    private val metron = MetronApi()
+    private val comicVine = ComicVineApi()
 
     var searchQuery by mutableStateOf("")
         private set
@@ -67,46 +68,18 @@ class SearchViewModel : ViewModel() {
         viewModelScope.launch {
             uiState = SearchUiState.Loading
             try {
-                val results = metron.searchSeries(query).results
+                val results = comicVine.searchVolumes(query)
                 uiState = SearchUiState.Success(results)
-                loadSeriesCovers(query, results)
             } catch (e: Exception) {
                 uiState = SearchUiState.Error(e.message ?: "Search failed")
             }
         }
     }
-
-    private suspend fun loadSeriesCovers(
-        query: String,
-        results: List<MetronSeriesSummary>
-    ) {
-        var enrichedResults = results
-        results.take(MAX_SERIES_COVERS).forEach { item ->
-            if (!item.image.isNullOrBlank() || searchQuery.trim() != query) return@forEach
-
-            val cover = try {
-                metron.getFirstIssueCoverForSeries(item.id)
-            } catch (_: Exception) {
-                null
-            }
-
-            if (!cover.isNullOrBlank() && searchQuery.trim() == query) {
-                enrichedResults = enrichedResults.map { result ->
-                    if (result.id == item.id) result.copy(image = cover) else result
-                }
-                uiState = SearchUiState.Success(enrichedResults)
-            }
-        }
-    }
-
-    private companion object {
-        const val MAX_SERIES_COVERS = 18
-    }
 }
 
 @Composable
 fun SeriesSearchCard(
-    result: MetronSeriesSummary,
+    result: ComicVineVolume,
     onClick: () -> Unit
 ) {
     Row(
@@ -125,9 +98,10 @@ fun SeriesSearchCard(
                 .background(CoverPlaceholder),
             contentAlignment = Alignment.Center
         ) {
-            if (result.image != null) {
+            val imageUrl = result.image?.coverUrl()
+            if (imageUrl != null) {
                 AsyncImage(
-                    model = result.image,
+                    model = imageUrl,
                     contentDescription = result.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize()
@@ -164,9 +138,9 @@ fun SeriesSearchCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            result.yearBegan?.let {
+            result.startYear?.let {
                 Text(
-                    text = it.toString(),
+                    text = it,
                     color = TextMuted,
                     fontSize = 12.sp
                 )

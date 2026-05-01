@@ -41,7 +41,7 @@ import com.moravian.comictracker.ui.viewmodels.CollectionViewModel
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
 import com.moravian.comictracker.ui.viewmodels.SearchViewModel
 import comictracker.composeapp.generated.resources.Res
-import comictracker.composeapp.generated.resources.metron_label
+import comictracker.composeapp.generated.resources.comicvine_label
 import org.jetbrains.compose.resources.stringResource
 
 sealed class Screen(val route: String, val label: String) {
@@ -150,7 +150,7 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                         onBack = { navController.popBackStack() },
                         database = database,
                         onIssueClick = { navController.navigate("issue_detail/$it") },
-                        onViewOnMetron = { navController.navigate("webview/series/$seriesId") }
+                        onViewOnComicVine = { navController.navigate("webview/series/$seriesId") }
                     )
                 }
                 composable(
@@ -162,7 +162,7 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                         issueId = issueId,
                         onBack = { navController.popBackStack() },
                         database = database,
-                        onViewOnMetron = { navController.navigate("webview/issue/$issueId") }
+                        onViewOnComicVine = { navController.navigate("webview/issue/$issueId") }
                     )
                 }
                 composable("barcode_scan") {
@@ -184,13 +184,13 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     val type = backStackEntry.savedStateHandle.get<String>("type") ?: return@composable
                     val id = backStackEntry.savedStateHandle.get<String>("id") ?: return@composable
                     val url = when (type) {
-                        "series" -> "https://metron.cloud/series/$id/"
-                        "issue" -> "https://metron.cloud/issue/$id/"
+                        "series" -> "https://comicvine.gamespot.com/volume/4050-$id/"
+                        "issue" -> "https://comicvine.gamespot.com/issue/4000-$id/"
                         else -> return@composable
                     }
                     ComicWebViewScreen(
                         url = url,
-                        title = stringResource(Res.string.metron_label),
+                        title = stringResource(Res.string.comicvine_label),
                         onBack = { navController.popBackStack() }
                     )
                 }

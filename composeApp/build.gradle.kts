@@ -8,16 +8,21 @@ val localProps = Properties().apply {
 
 val metronUsername: String = localProps.getProperty("METRON_USERNAME") ?: ""
 val metronPassword: String = localProps.getProperty("METRON_PASSWORD") ?: ""
+val comicVineApiKey: String = localProps.getProperty("COMICVINE_API_KEY")
+    ?: localProps.getProperty("API_KEY")
+    ?: ""
 
 // Claude wrote this, I couldn't figure out how to do secrets correctly so ggs
 val generateApiConfig by tasks.registering {
     val outputDir = layout.buildDirectory.dir("generated/kotlin/commonMain")
     inputs.property("metronUsername", metronUsername)
     inputs.property("metronPassword", metronPassword)
+    inputs.property("comicVineApiKey", comicVineApiKey)
     outputs.dir(outputDir)
     doLast {
         val mUser = inputs.properties["metronUsername"] as String
         val mPass = inputs.properties["metronPassword"] as String
+        val cvKey = inputs.properties["comicVineApiKey"] as String
         val metronFile = outputDir.get().file("com/moravian/comictracker/network/MetronConfig.kt").asFile
         metronFile.parentFile.mkdirs()
         metronFile.writeText(
@@ -25,6 +30,7 @@ val generateApiConfig by tasks.registering {
             "internal object MetronConfig {\n" +
             "    const val USERNAME = \"$mUser\"\n" +
             "    const val PASSWORD = \"$mPass\"\n" +
+            "    const val COMICVINE_API_KEY = \"$cvKey\"\n" +
             "}\n"
         )
     }

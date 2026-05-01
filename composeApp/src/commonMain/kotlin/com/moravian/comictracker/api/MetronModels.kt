@@ -12,83 +12,82 @@ data class MetronPagedResponse<T>(
 )
 
 @Serializable
-data class MetronSeriesSummary(
-    val id: Int,
-    @SerialName("series") val name: String = "",
-    val publisher: MetronPublisherRef? = null,
-    @SerialName("year_began") val yearBegan: Int? = null,
-    val image: String? = null,
-    val volume: Int? = null,
-    @SerialName("issue_count") val issueCount: Int? = null,
-    @SerialName("cv_id") val cvId: Int? = null
-)
-
-@Serializable
 data class MetronIssueSummary(
     val id: Int,
-    val series: MetronSeriesRef? = null,
-    val number: String = "",
-    @SerialName("cover_date") val coverDate: String? = null,
-    val image: String? = null,
-    val upc: String? = null,
     @SerialName("cv_id") val cvId: Int? = null
 )
 
 @Serializable
-data class MetronSeries(
+data class ComicVinePagedResponse<T>(
+    val error: String = "",
+    val results: List<T> = emptyList(),
+    @SerialName("status_code") val statusCode: Int = 0
+)
+
+@Serializable
+data class ComicVineVolume(
     val id: Int,
     val name: String = "",
-    val publisher: MetronPublisherRef? = null,
-    @SerialName("year_began") val yearBegan: Int? = null,
-    val image: String? = null,
-    @SerialName("desc") val description: String? = null,
-    @SerialName("cv_id") val cvId: Int? = null
+    val publisher: ComicVinePublisher? = null,
+    @SerialName("start_year") val startYear: String? = null,
+    val image: ComicVineImage? = null,
+    val description: String? = null,
+    @SerialName("count_of_issues") val countOfIssues: Int? = null
 )
 
 @Serializable
-data class MetronIssue(
+data class ComicVineIssueSummary(
     val id: Int,
-    val publisher: MetronPublisherRef? = null,
-    val series: MetronSeriesRef? = null,
-    val number: String = "",
+    val volume: ComicVineVolumeRef? = null,
+    @SerialName("issue_number") val issueNumber: String = "",
+    @SerialName("cover_date") val coverDate: String? = null,
+    val image: ComicVineImage? = null
+)
+
+@Serializable
+data class ComicVineIssue(
+    val id: Int,
+    val volume: ComicVineVolumeRef? = null,
+    @SerialName("issue_number") val issueNumber: String = "",
     @SerialName("cover_date") val coverDate: String? = null,
     @SerialName("store_date") val storeDate: String? = null,
-    val image: String? = null,
+    val image: ComicVineImage? = null,
     val description: String? = null,
-    val credits: List<MetronCredit> = emptyList(),
-    val characters: List<MetronCharacter> = emptyList(),
-    @SerialName("cv_id") val cvId: Int? = null
+    @SerialName("person_credits") val personCredits: List<ComicVineCredit> = emptyList(),
+    @SerialName("character_credits") val characterCredits: List<ComicVineCharacter> = emptyList()
 )
 
 @Serializable
-data class MetronCredit(
+data class ComicVinePublisher(
     val id: Int,
-    val creator: String,
-    val role: List<MetronRole> = emptyList()
+    val name: String = ""
 )
 
 @Serializable
-data class MetronRole(
-    val id: Int,
-    val name: String
+data class ComicVineVolumeRef(
+    val id: Int = 0,
+    val name: String = ""
 )
 
 @Serializable
-data class MetronCharacter(
-    val id: Int,
-    val name: String
-)
-
-@Serializable
-data class MetronPublisherRef(
-    val id: Int,
-    val name: String
-)
-
-@Serializable
-data class MetronSeriesRef(
+data class ComicVineCredit(
     val id: Int = 0,
     val name: String = "",
-    val volume: Int? = null,
-    @SerialName("year_began") val yearBegan: Int? = null
+    val role: String? = null
 )
+
+@Serializable
+data class ComicVineCharacter(
+    val id: Int = 0,
+    val name: String = ""
+)
+
+@Serializable
+data class ComicVineImage(
+    @SerialName("medium_url") val mediumUrl: String? = null,
+    @SerialName("small_url") val smallUrl: String? = null,
+    @SerialName("super_url") val superUrl: String? = null,
+    @SerialName("original_url") val originalUrl: String? = null
+)
+
+fun ComicVineImage.coverUrl(): String? = mediumUrl ?: smallUrl ?: superUrl ?: originalUrl

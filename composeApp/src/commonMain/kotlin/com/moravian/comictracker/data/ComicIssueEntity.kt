@@ -16,7 +16,7 @@ import androidx.room.PrimaryKey
 )
 data class ComicIssueEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val metronId: Int,
+    val comicvineId: Int,
     val seriesId: Long,
     val issueNumber: Int,
     val title: String,

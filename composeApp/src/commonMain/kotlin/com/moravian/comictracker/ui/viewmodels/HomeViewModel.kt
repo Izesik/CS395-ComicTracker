@@ -2,9 +2,9 @@ package com.moravian.comictracker.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.moravian.comictracker.network.MetronApi
-import com.moravian.comictracker.network.MetronIssueSummary
-import com.moravian.comictracker.network.MetronSeriesSummary
+import com.moravian.comictracker.network.ComicVineApi
+import com.moravian.comictracker.network.ComicVineIssueSummary
+import com.moravian.comictracker.network.ComicVineVolume
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,13 +14,13 @@ enum class HomeTab { Series, Issues }
 
 sealed class HomeUiState {
     data object Loading : HomeUiState()
-    data class SeriesSuccess(val series: List<MetronSeriesSummary>) : HomeUiState()
-    data class IssuesSuccess(val issues: List<MetronIssueSummary>) : HomeUiState()
+    data class SeriesSuccess(val series: List<ComicVineVolume>) : HomeUiState()
+    data class IssuesSuccess(val issues: List<ComicVineIssueSummary>) : HomeUiState()
     data class Error(val message: String) : HomeUiState()
 }
 
 class HomeViewModel : ViewModel() {
-    private val metron = MetronApi()
+    private val comicVine = ComicVineApi()
 
     private val _selectedTab = MutableStateFlow(HomeTab.Series)
     val selectedTab: StateFlow<HomeTab> = _selectedTab.asStateFlow()
@@ -28,8 +28,8 @@ class HomeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    private var cachedSeries: List<MetronSeriesSummary>? = null
-    private var cachedIssues: List<MetronIssueSummary>? = null
+    private var cachedSeries: List<ComicVineVolume>? = null
+    private var cachedIssues: List<ComicVineIssueSummary>? = null
 
     init {
         loadSeries()
@@ -48,35 +48,11 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val series = metron.getPopularSeries().results
+                val series = comicVine.getPopularSeries(limit = HOME_SERIES_LIMIT)
                 cachedSeries = series
                 _uiState.value = HomeUiState.SeriesSuccess(series)
-                loadSeriesCovers(series)
             } catch (e: Exception) {
                 _uiState.value = HomeUiState.Error(e.message ?: "Failed to load series")
-            }
-        }
-    }
-
-    private suspend fun loadSeriesCovers(series: List<MetronSeriesSummary>) {
-        var enrichedSeries = series
-        series.take(MAX_SERIES_COVERS).forEach { item ->
-            if (!item.image.isNullOrBlank()) return@forEach
-
-            val cover = try {
-                metron.getFirstIssueCoverForSeries(item.id)
-            } catch (_: Exception) {
-                null
-            }
-
-            if (!cover.isNullOrBlank()) {
-                enrichedSeries = enrichedSeries.map { seriesItem ->
-                    if (seriesItem.id == item.id) seriesItem.copy(image = cover) else seriesItem
-                }
-                cachedSeries = enrichedSeries
-                if (_selectedTab.value == HomeTab.Series) {
-                    _uiState.value = HomeUiState.SeriesSuccess(enrichedSeries)
-                }
             }
         }
     }
@@ -85,7 +61,7 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val issues = metron.getRecentIssues().results.filter { it.series?.name?.isNotBlank() == true }
+                val issues = comicVine.getRecentIssues().filter { it.volume?.name?.isNotBlank() == true }
                 cachedIssues = issues
                 _uiState.value = HomeUiState.IssuesSuccess(issues)
             } catch (e: Exception) {
@@ -95,6 +71,6 @@ class HomeViewModel : ViewModel() {
     }
 
     private companion object {
-        const val MAX_SERIES_COVERS = 18
+        const val HOME_SERIES_LIMIT = 12
     }
 }

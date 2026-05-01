@@ -25,7 +25,7 @@ class BarcodeScanViewModel : ViewModel() {
         if (state !is BarcodeScanState.Scanning) return
         state = BarcodeScanState.Loading(upc)
         viewModelScope.launch {
-            val issueId = metron.searchByUpc(upc).results.firstOrNull()?.id
+            val issueId = metron.searchByUpc(upc).results.firstOrNull()?.cvId
             state = if (issueId != null) BarcodeScanState.Found(issueId) else BarcodeScanState.NotFound
         }
     }

@@ -36,8 +36,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import com.moravian.comictracker.network.MetronIssueSummary
-import com.moravian.comictracker.network.MetronSeriesSummary
+import com.moravian.comictracker.network.ComicVineIssueSummary
+import com.moravian.comictracker.network.ComicVineVolume
+import com.moravian.comictracker.network.coverUrl
 import com.moravian.comictracker.ui.viewmodels.HomeTab
 import com.moravian.comictracker.ui.viewmodels.HomeUiState
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
@@ -162,7 +163,7 @@ private fun TabLabel(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SeriesCard(series: MetronSeriesSummary, onClick: () -> Unit) {
+private fun SeriesCard(series: ComicVineVolume, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -176,9 +177,10 @@ private fun SeriesCard(series: MetronSeriesSummary, onClick: () -> Unit) {
                 .background(CardBackground),
             contentAlignment = Alignment.Center
         ) {
-            if (series.image != null) {
+            val imageUrl = series.image?.coverUrl()
+            if (imageUrl != null) {
                 AsyncImage(
-                    model = series.image,
+                    model = imageUrl,
                     contentDescription = series.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -202,9 +204,9 @@ private fun SeriesCard(series: MetronSeriesSummary, onClick: () -> Unit) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        if (series.yearBegan != null) {
+        if (series.startYear != null) {
             Text(
-                text = series.yearBegan.toString(),
+                text = series.startYear,
                 style = MaterialTheme.typography.labelSmall,
                 color = TextMuted,
                 maxLines = 1
@@ -214,7 +216,7 @@ private fun SeriesCard(series: MetronSeriesSummary, onClick: () -> Unit) {
 }
 
 @Composable
-private fun IssueCard(issue: MetronIssueSummary, onClick: () -> Unit) {
+private fun IssueCard(issue: ComicVineIssueSummary, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -228,8 +230,8 @@ private fun IssueCard(issue: MetronIssueSummary, onClick: () -> Unit) {
                 .background(CardBackground)
         ) {
             AsyncImage(
-                model = issue.image,
-                contentDescription = issue.series?.name,
+                model = issue.image?.coverUrl(),
+                contentDescription = issue.volume?.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
@@ -242,7 +244,7 @@ private fun IssueCard(issue: MetronIssueSummary, onClick: () -> Unit) {
                     .padding(horizontal = 5.dp, vertical = 2.dp)
             ) {
                 Text(
-                    text = "#${issue.number}",
+                    text = "#${issue.issueNumber}",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextPrimary,
                     fontWeight = FontWeight.SemiBold
@@ -251,7 +253,7 @@ private fun IssueCard(issue: MetronIssueSummary, onClick: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(5.dp))
         Text(
-            text = issue.series?.name ?: "",
+            text = issue.volume?.name ?: "",
             style = MaterialTheme.typography.labelMedium,
             color = TextPrimary,
             maxLines = 1,

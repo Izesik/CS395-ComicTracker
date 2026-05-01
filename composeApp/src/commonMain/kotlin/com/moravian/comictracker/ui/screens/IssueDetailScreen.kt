@@ -45,8 +45,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.ComicTrackerDatabase
-import com.moravian.comictracker.network.MetronCharacter
-import com.moravian.comictracker.network.MetronIssue
+import com.moravian.comictracker.network.ComicVineCharacter
+import com.moravian.comictracker.network.ComicVineIssue
+import com.moravian.comictracker.network.coverUrl
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailUiState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailViewModel
@@ -62,7 +63,7 @@ fun IssueDetailScreen(
     issueId: Int,
     onBack: () -> Unit,
     database: ComicTrackerDatabase,
-    onViewOnMetron: () -> Unit = {},
+    onViewOnComicVine: () -> Unit = {},
     viewModel: IssueDetailViewModel = viewModel(factory = IssueDetailViewModel.factory(issueId, database))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -90,7 +91,7 @@ fun IssueDetailScreen(
                 onBack = onBack,
                 addState = addState,
                 onAddToCollection = { viewModel.addToCollection() },
-                onViewOnMetron = onViewOnMetron
+                onViewOnComicVine = onViewOnComicVine
             )
         }
     }
@@ -98,13 +99,14 @@ fun IssueDetailScreen(
 
 @Composable
 private fun IssueDetailContent(
-    issue: MetronIssue,
+    issue: ComicVineIssue,
     onBack: () -> Unit,
     addState: AddCollectionState,
     onAddToCollection: () -> Unit,
-    onViewOnMetron: () -> Unit
+    onViewOnComicVine: () -> Unit
 ) {
-    val volumeName = "${issue.series?.name ?: "Issue"} #${issue.number}"
+    val imageUrl = issue.image?.coverUrl()
+    val volumeName = "${issue.volume?.name ?: "Issue"} #${issue.issueNumber}"
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         // ── Hero image ────────────────────────────────────────────────────
@@ -115,7 +117,7 @@ private fun IssueDetailContent(
                     .height(340.dp)
             ) {
                 AsyncImage(
-                    model = issue.image,
+                    model = imageUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -145,7 +147,7 @@ private fun IssueDetailContent(
                         modifier = Modifier.width(88.dp).height(124.dp)
                     ) {
                         AsyncImage(
-                            model = issue.image,
+                            model = imageUrl,
                             contentDescription = volumeName,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
@@ -172,12 +174,12 @@ private fun IssueDetailContent(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = buildIssueMeta(issue.publisher?.name, issue.coverDate),
+                            text = buildIssueMeta(null, issue.coverDate),
                             style = MaterialTheme.typography.bodyMedium,
                             color = IssueTextSecondary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        IssueNumberBadge(issueNumber = issue.number)
+                        IssueNumberBadge(issueNumber = issue.issueNumber)
                     }
                 }
             }
@@ -202,7 +204,7 @@ private fun IssueDetailContent(
         }
 
         // ── Credits ───────────────────────────────────────────────────────
-        val credits = issue.credits.take(3)
+        val credits = issue.personCredits.take(3)
         if (credits.isNotEmpty()) {
             item {
                 HorizontalDivider(
@@ -228,12 +230,12 @@ private fun IssueDetailContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = credit.creator,
+                                text = credit.name,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = IssueTextPrimary,
                                 fontWeight = FontWeight.Medium
                             )
-                            credit.role.firstOrNull()?.name?.takeIf { it.isNotBlank() }?.let { role ->
+                            credit.role?.takeIf { it.isNotBlank() }?.let { role ->
                                 Text(
                                     text = role,
                                     style = MaterialTheme.typography.bodySmall,
@@ -247,7 +249,7 @@ private fun IssueDetailContent(
         }
 
         // ── Characters ────────────────────────────────────────────────────
-        if (issue.characters.isNotEmpty()) {
+        if (issue.characterCredits.isNotEmpty()) {
             item {
                 HorizontalDivider(
                     color = Color.White.copy(alpha = 0.12f),
@@ -269,7 +271,7 @@ private fun IssueDetailContent(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(issue.characters.take(20)) { character ->
+                    items(issue.characterCredits.take(20)) { character ->
                         IssueCharacterChip(character)
                     }
                 }
@@ -329,7 +331,7 @@ private fun IssueDetailContent(
             }
         }
 
-        // ── View on Metron ────────────────────────────────────────────────
+        // ── View on ComicVine ─────────────────────────────────────────────
         item {
             Box(
                 modifier = Modifier
@@ -339,11 +341,11 @@ private fun IssueDetailContent(
                     .padding(bottom = 8.dp)
             ) {
                 Button(
-                    onClick = onViewOnMetron,
+                    onClick = onViewOnComicVine,
                     colors = ButtonDefaults.outlinedButtonColors(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("View on Metron")
+                    Text("View on ComicVine")
                 }
             }
         }
@@ -375,7 +377,7 @@ private fun IssueNumberBadge(issueNumber: String) {
 }
 
 @Composable
-private fun IssueCharacterChip(character: MetronCharacter) {
+private fun IssueCharacterChip(character: ComicVineCharacter) {
     SuggestionChip(
         onClick = {},
         label = {

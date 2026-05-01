@@ -47,8 +47,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.ComicTrackerDatabase
-import com.moravian.comictracker.network.MetronIssueSummary
-import com.moravian.comictracker.network.MetronSeries
+import com.moravian.comictracker.network.ComicVineIssueSummary
+import com.moravian.comictracker.network.ComicVineVolume
+import com.moravian.comictracker.network.coverUrl
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailUiState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailViewModel
@@ -65,7 +66,7 @@ fun ComicDetailScreen(
     onBack: () -> Unit,
     database: ComicTrackerDatabase,
     onIssueClick: (Int) -> Unit = {},
-    onViewOnMetron: () -> Unit = {},
+    onViewOnComicVine: () -> Unit = {},
     viewModel: ComicDetailViewModel = viewModel(factory = ComicDetailViewModel.factory(seriesId, database))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -96,7 +97,7 @@ fun ComicDetailScreen(
                 addState = addState,
                 onAddToCollection = { viewModel.addToCollection() },
                 onIssueClick = onIssueClick,
-                onViewOnMetron = onViewOnMetron
+                onViewOnComicVine = onViewOnComicVine
             )
         }
     }
@@ -104,14 +105,15 @@ fun ComicDetailScreen(
 
 @Composable
 private fun DetailContent(
-    series: MetronSeries,
-    issues: List<MetronIssueSummary>,
+    series: ComicVineVolume,
+    issues: List<ComicVineIssueSummary>,
     onBack: () -> Unit,
     addState: AddCollectionState,
     onAddToCollection: () -> Unit,
     onIssueClick: (Int) -> Unit,
-    onViewOnMetron: () -> Unit
+    onViewOnComicVine: () -> Unit
 ) {
+    val coverUrl = series.image?.coverUrl()
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         // ── Hero image ────────────────────────────────────────────────────
         item {
@@ -121,7 +123,7 @@ private fun DetailContent(
                     .height(340.dp)
             ) {
                 AsyncImage(
-                    model = series.image,
+                    model = coverUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -151,7 +153,7 @@ private fun DetailContent(
                         modifier = Modifier.width(88.dp).height(124.dp)
                     ) {
                         AsyncImage(
-                            model = series.image,
+                            model = coverUrl,
                             contentDescription = series.name,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
@@ -176,7 +178,7 @@ private fun DetailContent(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = buildHeroMeta(series.yearBegan?.toString(), series.publisher?.name),
+                            text = buildHeroMeta(series.startYear, series.publisher?.name),
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
@@ -254,7 +256,7 @@ private fun DetailContent(
             }
         }
 
-        // ── View on Metron ────────────────────────────────────────────────
+        // ── View on ComicVine ─────────────────────────────────────────────
         item {
             Box(
                 modifier = Modifier
@@ -264,11 +266,11 @@ private fun DetailContent(
                     .padding(bottom = 8.dp)
             ) {
                 Button(
-                    onClick = onViewOnMetron,
+                    onClick = onViewOnComicVine,
                     colors = ButtonDefaults.outlinedButtonColors(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("View on Metron")
+                    Text("View on ComicVine")
                 }
             }
         }
@@ -326,7 +328,7 @@ private fun DetailContent(
 
 @Composable
 private fun IssueGridCell(
-    issue: MetronIssueSummary,
+    issue: ComicVineIssueSummary,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -341,8 +343,8 @@ private fun IssueGridCell(
             modifier = Modifier.fillMaxSize()
         ) {
             AsyncImage(
-                model = issue.image,
-                contentDescription = "#${issue.number}",
+                model = issue.image?.coverUrl(),
+                contentDescription = "#${issue.issueNumber}",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
@@ -362,7 +364,7 @@ private fun IssueGridCell(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "#${issue.number}",
+                text = "#${issue.issueNumber}",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White,
                 fontWeight = FontWeight.Bold

@@ -100,7 +100,7 @@ fun SearchScreen(
             is SearchUiState.Idle -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "Search the Metron database",
+                        text = "Search ComicVine",
                         color = TextMuted,
                         fontSize = 14.sp
                     )

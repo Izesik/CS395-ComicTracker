@@ -93,7 +93,7 @@ private fun NotFoundOverlay(onRetry: () -> Unit, onDismiss: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "This barcode wasn't found in Metron.",
+                text = "This barcode wasn't found.",
                 color = Color(0xFFAAAAAA),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center

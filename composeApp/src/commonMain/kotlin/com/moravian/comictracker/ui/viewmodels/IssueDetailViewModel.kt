@@ -8,8 +8,9 @@ import com.moravian.comictracker.data.ComicDao
 import com.moravian.comictracker.data.ComicIssueEntity
 import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.data.SeriesEntity
-import com.moravian.comictracker.network.MetronApi
-import com.moravian.comictracker.network.MetronIssue
+import com.moravian.comictracker.network.ComicVineApi
+import com.moravian.comictracker.network.ComicVineIssue
+import com.moravian.comictracker.network.coverUrl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +19,7 @@ import kotlin.reflect.KClass
 
 sealed class IssueDetailUiState {
     data object Loading : IssueDetailUiState()
-    data class Success(val issue: MetronIssue) : IssueDetailUiState()
+    data class Success(val issue: ComicVineIssue) : IssueDetailUiState()
     data class Error(val message: String) : IssueDetailUiState()
 }
 
@@ -26,7 +27,7 @@ class IssueDetailViewModel(
     private val issueId: Int,
     private val dao: ComicDao
 ) : ViewModel() {
-    private val api = MetronApi()
+    private val api = ComicVineApi()
 
     private val _uiState = MutableStateFlow<IssueDetailUiState>(IssueDetailUiState.Loading)
     val uiState: StateFlow<IssueDetailUiState> = _uiState.asStateFlow()
@@ -53,7 +54,7 @@ class IssueDetailViewModel(
 
     private fun checkIfInCollection() {
         viewModelScope.launch {
-            val existing = dao.getIssueByMetronId(issueId)
+            val existing = dao.getIssueByComicVineId(issueId)
             _addState.value = if (existing != null) AddCollectionState.InCollection else AddCollectionState.Idle
         }
     }
@@ -63,33 +64,32 @@ class IssueDetailViewModel(
         viewModelScope.launch {
             _addState.value = AddCollectionState.Adding
 
-            val seriesId = if (issue.series != null) {
-                val existing = dao.getSeriesByMetronId(issue.series.id)
+            val seriesId = if (issue.volume != null) {
+                val existing = dao.getSeriesByComicVineId(issue.volume.id)
                 existing?.id ?: dao.insertSeries(
                     SeriesEntity(
-                        metronId = issue.series.id,
-                        title = issue.series.name,
-                        publisher = issue.publisher?.name,
-                        coverImageUrl = issue.image
+                        comicvineId = issue.volume.id,
+                        title = issue.volume.name,
+                        coverImageUrl = issue.image?.coverUrl()
                     )
                 )
             } else {
                 dao.insertSeries(
                     SeriesEntity(
-                        metronId = issueId,
-                        title = "Issue #${issue.number}",
-                        coverImageUrl = issue.image
+                        comicvineId = issueId,
+                        title = "Issue #${issue.issueNumber}",
+                        coverImageUrl = issue.image?.coverUrl()
                     )
                 )
             }
 
             dao.insertComicIssue(
                 ComicIssueEntity(
-                    metronId = issue.id,
+                    comicvineId = issue.id,
                     seriesId = seriesId,
-                    issueNumber = issue.number.toIntOrNull() ?: 0,
-                    title = "#${issue.number}",
-                    coverImageUrl = issue.image
+                    issueNumber = issue.issueNumber.toIntOrNull() ?: 0,
+                    title = "#${issue.issueNumber}",
+                    coverImageUrl = issue.image?.coverUrl()
                 )
             )
             _addState.value = AddCollectionState.Added

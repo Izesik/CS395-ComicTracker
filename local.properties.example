@@ -1,3 +1,5 @@
+# ComicVine is the primary API. Metron is only used for barcode UPC lookup.
 # Metron API credentials — register at https://metron.cloud
 METRON_USERNAME=<Metron_Username>
 METRON_PASSWORD=<Metron_Password>
+COMICVINE_API_KEY=<ComicVine_API_Key>
