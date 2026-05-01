@@ -14,6 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,6 +39,7 @@ fun BarcodeScanRoute(
     viewModel: BarcodeScanViewModel = viewModel()
 ) {
     val scanState = viewModel.state
+    var scanSession by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(scanState) {
         if (scanState is BarcodeScanState.Found) {
@@ -42,15 +48,31 @@ fun BarcodeScanRoute(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        BarcodeCameraView(
-            onBarcodeDetected = { viewModel.onBarcodeScanned(it) },
-            onDismiss = onDismiss
-        )
+        key(scanSession) {
+            BarcodeCameraView(
+                onBarcodeDetected = { viewModel.onBarcodeScanned(it) },
+                onDismiss = onDismiss
+            )
+        }
 
         when (scanState) {
             is BarcodeScanState.Loading -> LoadingOverlay(upc = scanState.upc)
             is BarcodeScanState.NotFound -> NotFoundOverlay(
-                onRetry = { viewModel.reset() },
+                title = "Comic not found",
+                message = "This barcode wasn't found.",
+                onRetry = {
+                    scanSession += 1
+                    viewModel.reset()
+                },
+                onDismiss = onDismiss
+            )
+            is BarcodeScanState.Error -> NotFoundOverlay(
+                title = "Lookup failed",
+                message = "Check your connection and Metron credentials, then try again.",
+                onRetry = {
+                    scanSession += 1
+                    viewModel.reset()
+                },
                 onDismiss = onDismiss
             )
             else -> {}
@@ -75,7 +97,12 @@ private fun LoadingOverlay(upc: String) {
 }
 
 @Composable
-private fun NotFoundOverlay(onRetry: () -> Unit, onDismiss: () -> Unit) {
+private fun NotFoundOverlay(
+    title: String,
+    message: String,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -87,13 +114,13 @@ private fun NotFoundOverlay(onRetry: () -> Unit, onDismiss: () -> Unit) {
             modifier = Modifier.padding(horizontal = 40.dp)
         ) {
             Text(
-                text = "Comic not found",
+                text = title,
                 color = Color.White,
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "This barcode wasn't found.",
+                text = message,
                 color = Color(0xFFAAAAAA),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center

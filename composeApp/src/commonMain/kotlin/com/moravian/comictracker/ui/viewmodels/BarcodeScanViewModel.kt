@@ -13,6 +13,7 @@ sealed class BarcodeScanState {
     data class Loading(val upc: String) : BarcodeScanState()
     data class Found(val issueId: Int) : BarcodeScanState()
     data object NotFound : BarcodeScanState()
+    data object Error : BarcodeScanState()
 }
 
 class BarcodeScanViewModel : ViewModel() {
@@ -23,10 +24,19 @@ class BarcodeScanViewModel : ViewModel() {
 
     fun onBarcodeScanned(upc: String) {
         if (state !is BarcodeScanState.Scanning) return
-        state = BarcodeScanState.Loading(upc)
+        val normalizedUpc = upc.filter { it.isDigit() }
+        if (normalizedUpc.isBlank()) {
+            state = BarcodeScanState.NotFound
+            return
+        }
+        state = BarcodeScanState.Loading(normalizedUpc)
         viewModelScope.launch {
-            val issueId = metron.searchByUpc(upc).results.firstOrNull()?.cvId
-            state = if (issueId != null) BarcodeScanState.Found(issueId) else BarcodeScanState.NotFound
+            state = try {
+                val issueId = metron.searchByUpc(normalizedUpc).results.firstOrNull()?.cvId
+                if (issueId != null) BarcodeScanState.Found(issueId) else BarcodeScanState.NotFound
+            } catch (_: Exception) {
+                BarcodeScanState.Error
+            }
         }
     }
 

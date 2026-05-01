@@ -1,43 +1,133 @@
 package com.moravian.comictracker.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.UIKitView
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.readValue
+import platform.AVFoundation.AVCaptureConnection
+import platform.AVFoundation.AVCaptureDevice
+import platform.AVFoundation.AVCaptureDeviceMeta
+import platform.AVFoundation.AVCaptureDeviceInput
+import platform.AVFoundation.AVCaptureMetadataOutput
+import platform.AVFoundation.AVCaptureMetadataOutputObjectsDelegateProtocol
+import platform.AVFoundation.AVCaptureOutput
+import platform.AVFoundation.AVCaptureSession
+import platform.AVFoundation.AVCaptureVideoPreviewLayer
+import platform.AVFoundation.AVAuthorizationStatusAuthorized
+import platform.AVFoundation.AVAuthorizationStatusDenied
+import platform.AVFoundation.AVAuthorizationStatusNotDetermined
+import platform.AVFoundation.AVLayerVideoGravityResizeAspectFill
+import platform.AVFoundation.AVMediaTypeVideo
+import platform.AVFoundation.AVMetadataMachineReadableCodeObject
+import platform.AVFoundation.AVMetadataObjectTypeEAN13Code
+import platform.AVFoundation.AVMetadataObjectTypeEAN8Code
+import platform.AVFoundation.AVMetadataObjectTypeUPCECode
+import platform.CoreGraphics.CGRectZero
+import platform.UIKit.UIColor
+import platform.UIKit.UIView
+import platform.darwin.NSObject
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
 
 @Composable
 actual fun BarcodeCameraView(onBarcodeDetected: (String) -> Unit, onDismiss: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(32.dp)
+    var hasPermission by remember {
+        mutableStateOf(
+            AVCaptureDeviceMeta.authorizationStatusForMediaType(AVMediaTypeVideo) ==
+                    AVAuthorizationStatusAuthorized
+        )
+    }
+    var deniedPermission by remember {
+        mutableStateOf(
+            AVCaptureDeviceMeta.authorizationStatusForMediaType(AVMediaTypeVideo) ==
+                    AVAuthorizationStatusDenied
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        if (AVCaptureDeviceMeta.authorizationStatusForMediaType(AVMediaTypeVideo) ==
+            AVAuthorizationStatusNotDetermined
         ) {
-            Text(
-                "Barcode scanning is not yet supported on iOS",
-                color = Color.White,
-                textAlign = TextAlign.Center
+            AVCaptureDeviceMeta.requestAccessForMediaType(AVMediaTypeVideo) { granted: Boolean ->
+                dispatch_async(dispatch_get_main_queue()) {
+                    hasPermission = granted
+                    deniedPermission = !granted
+                }
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        if (hasPermission) {
+            val scannerView = remember {
+                BarcodeScannerUIView(onBarcodeDetected = onBarcodeDetected)
+            }
+            DisposableEffect(scannerView) {
+                scannerView.start()
+                onDispose { scannerView.stop() }
+            }
+            UIKitView(
+                factory = { scannerView },
+                modifier = Modifier.fillMaxSize()
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onDismiss) { Text("Go Back") }
+
+            Box(
+                modifier = Modifier
+                    .size(260.dp, 160.dp)
+                    .align(Alignment.Center)
+                    .border(2.dp, Color.White.copy(alpha = 0.85f), RoundedCornerShape(10.dp))
+            )
+            Text(
+                text = "Point camera at barcode",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(top = 200.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+            )
+        } else {
+            PermissionMessage(
+                deniedPermission = deniedPermission,
+                onRequestPermission = {
+                    AVCaptureDeviceMeta.requestAccessForMediaType(AVMediaTypeVideo) { granted: Boolean ->
+                        dispatch_async(dispatch_get_main_queue()) {
+                            hasPermission = granted
+                            deniedPermission = !granted
+                        }
+                    }
+                }
+            )
         }
 
         IconButton(
@@ -53,5 +143,104 @@ actual fun BarcodeCameraView(onBarcodeDetected: (String) -> Unit, onDismiss: () 
                 tint = Color.White
             )
         }
+    }
+}
+
+@Composable
+private fun PermissionMessage(
+    deniedPermission: Boolean,
+    onRequestPermission: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = if (deniedPermission) {
+                "Camera access is disabled. Enable it in Settings to scan barcodes."
+            } else {
+                "Camera access is required to scan barcodes"
+            },
+            color = Color.White,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        if (!deniedPermission) {
+            Button(onClick = onRequestPermission) {
+                Text("Grant Permission")
+            }
+        }
+        Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private class BarcodeScannerUIView(
+    private val onBarcodeDetected: (String) -> Unit
+) : UIView(frame = CGRectZero.readValue()), AVCaptureMetadataOutputObjectsDelegateProtocol {
+    private val session = AVCaptureSession()
+    private val metadataOutput = AVCaptureMetadataOutput()
+    private val previewLayer = AVCaptureVideoPreviewLayer(session = session)
+    private var didScan = false
+    private var configured = false
+
+    init {
+        backgroundColor = UIColor.blackColor
+        previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
+        layer.addSublayer(previewLayer)
+        configureSession()
+    }
+
+    fun start() {
+        if (configured && !session.running) {
+            session.startRunning()
+        }
+    }
+
+    fun stop() {
+        if (session.running) {
+            session.stopRunning()
+        }
+    }
+
+    override fun layoutSubviews() {
+        super.layoutSubviews()
+        previewLayer.frame = bounds
+    }
+
+    private fun configureSession() {
+        val device = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo) ?: return
+        val input = AVCaptureDeviceInput.deviceInputWithDevice(device, error = null) ?: return
+
+        if (session.canAddInput(input)) {
+            session.addInput(input)
+        }
+        if (session.canAddOutput(metadataOutput)) {
+            session.addOutput(metadataOutput)
+        }
+
+        metadataOutput.setMetadataObjectsDelegate(this, queue = dispatch_get_main_queue())
+        metadataOutput.metadataObjectTypes = listOf(
+            AVMetadataObjectTypeEAN13Code,
+            AVMetadataObjectTypeEAN8Code,
+            AVMetadataObjectTypeUPCECode
+        )
+        configured = true
+    }
+
+    override fun captureOutput(
+        output: AVCaptureOutput,
+        didOutputMetadataObjects: List<*>,
+        fromConnection: AVCaptureConnection
+    ) {
+        if (didScan) return
+        val rawValue = didOutputMetadataObjects
+            .firstNotNullOfOrNull { (it as? AVMetadataMachineReadableCodeObject)?.stringValue }
+            ?: return
+
+        didScan = true
+        stop()
+        onBarcodeDetected(rawValue)
     }
 }
