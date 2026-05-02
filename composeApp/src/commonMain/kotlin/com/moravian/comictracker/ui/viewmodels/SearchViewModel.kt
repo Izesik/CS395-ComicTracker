@@ -34,6 +34,7 @@ import coil3.compose.AsyncImage
 import com.moravian.comictracker.network.ComicVineApi
 import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.network.coverUrl
+import com.moravian.comictracker.network.toUserFacingNetworkMessage
 import kotlinx.coroutines.launch
 
 private val CardBackground = Color(0xFF1E1E1E)
@@ -71,7 +72,9 @@ class SearchViewModel : ViewModel() {
                 val results = comicVine.searchVolumes(query)
                 uiState = SearchUiState.Success(results)
             } catch (e: Exception) {
-                uiState = SearchUiState.Error(e.message ?: "Search failed")
+                uiState = SearchUiState.Error(
+                    e.toUserFacingNetworkMessage("ComicVine", "Search failed")
+                )
             }
         }
     }

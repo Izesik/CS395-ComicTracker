@@ -11,6 +11,7 @@ import com.moravian.comictracker.data.SeriesEntity
 import com.moravian.comictracker.network.ComicVineApi
 import com.moravian.comictracker.network.ComicVineIssue
 import com.moravian.comictracker.network.coverUrl
+import com.moravian.comictracker.network.toUserFacingNetworkMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,7 +48,9 @@ class IssueDetailViewModel(
                 val issue = api.getIssue(issueId)
                 _uiState.value = IssueDetailUiState.Success(issue)
             } catch (e: Exception) {
-                _uiState.value = IssueDetailUiState.Error(e.message ?: "Failed to load issue")
+                _uiState.value = IssueDetailUiState.Error(
+                    e.toUserFacingNetworkMessage("ComicVine", "Failed to load issue")
+                )
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.moravian.comictracker.network
 
+import com.moravian.comictracker.AppLog
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
@@ -114,11 +115,35 @@ class MetronApi {
     }
 
     suspend fun searchByUpc(upc: String): MetronPagedResponse<MetronIssueSummary> {
+        AppLog.d(TAG, "GET $METRON_BASE_URL/issue/?upc=$upc")
         val response = client.get("$METRON_BASE_URL/issue/") {
             parameter("upc", upc)
         }
+        AppLog.d(TAG, "Metron UPC lookup status=${response.status.value} ${response.status.description}")
+        if (!response.status.isSuccess()) {
+            throw Exception("Metron error: ${response.status}")
+        }
+
+        val body = response.body<MetronPagedResponse<MetronIssueSummary>>()
+        AppLog.d(
+            TAG,
+            "Metron UPC lookup returned count=${body.count}, results=${body.results.map { "id=${it.id}, cvId=${it.cvId}" }}"
+        )
+        return body
+    }
+
+    suspend fun getIssue(id: Int): MetronIssue {
+        AppLog.d(TAG, "GET $METRON_BASE_URL/issue/$id/")
+        val response = client.get("$METRON_BASE_URL/issue/$id/")
+        AppLog.d(TAG, "Metron issue status=${response.status.value} ${response.status.description}")
         if (!response.status.isSuccess()) throw Exception("Metron error: ${response.status}")
-        return response.body()
+        val issue = response.body<MetronIssue>()
+        AppLog.d(TAG, "Metron issue id=${issue.id}, cvId=${issue.cvId}")
+        return issue
+    }
+
+    private companion object {
+        const val TAG = "ComicTrackerBarcode"
     }
 }
 

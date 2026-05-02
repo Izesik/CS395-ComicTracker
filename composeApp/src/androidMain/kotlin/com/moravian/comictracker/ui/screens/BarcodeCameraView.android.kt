@@ -44,10 +44,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.moravian.comictracker.AppLog
+import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.LuminanceSource
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.NotFoundException
+import com.google.zxing.PlanarYUVLuminanceSource
+import com.google.zxing.ResultMetadataType
+import com.google.zxing.common.HybridBinarizer
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -80,12 +95,12 @@ actual fun BarcodeCameraView(onBarcodeDetected: (String) -> Unit, onDismiss: () 
             // Scan-target frame
             Box(
                 modifier = Modifier
-                    .size(260.dp, 160.dp)
+                    .size(320.dp, 160.dp)
                     .align(Alignment.Center)
                     .border(2.dp, Color.White.copy(alpha = 0.85f), RoundedCornerShape(10.dp))
             )
             Text(
-                text = "Point camera at barcode",
+                text = "Align both barcodes in frame",
                 color = Color.White,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
@@ -136,6 +151,8 @@ private fun CameraPreviewWithScanner(
     val context = LocalContext.current
     val executor = remember { Executors.newSingleThreadExecutor() }
     val scanned = remember { AtomicBoolean(false) }
+    val accumulator = remember { BarcodeScanAccumulator() }
+    val zxingReader = remember { createZxingReader() }
     val scanner = remember {
         BarcodeScanning.getClient(
             BarcodeScannerOptions.Builder()
@@ -147,9 +164,11 @@ private fun CameraPreviewWithScanner(
                 .build()
         )
     }
+    val textRecognizer = remember { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
     DisposableEffect(Unit) {
         onDispose {
             scanner.close()
+            textRecognizer.close()
             executor.shutdown()
         }
     }
@@ -168,7 +187,15 @@ private fun CameraPreviewWithScanner(
                     .build()
                     .also { analysis ->
                         analysis.setAnalyzer(executor) { imageProxy ->
-                            processImageProxy(imageProxy, scanner, scanned, onBarcodeDetected)
+                            processImageProxy(
+                                imageProxy = imageProxy,
+                                scanner = scanner,
+                                textRecognizer = textRecognizer,
+                                zxingReader = zxingReader,
+                                accumulator = accumulator,
+                                scanned = scanned,
+                                onBarcodeDetected = onBarcodeDetected
+                            )
                         }
                     }
                 try {
@@ -190,6 +217,9 @@ private fun CameraPreviewWithScanner(
 private fun processImageProxy(
     imageProxy: ImageProxy,
     scanner: com.google.mlkit.vision.barcode.BarcodeScanner,
+    textRecognizer: TextRecognizer,
+    zxingReader: MultiFormatReader,
+    accumulator: BarcodeScanAccumulator,
     scanned: AtomicBoolean,
     onBarcodeDetected: (String) -> Unit
 ) {
@@ -199,13 +229,230 @@ private fun processImageProxy(
         return
     }
     val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-    scanner.process(inputImage)
-        .addOnSuccessListener { barcodes ->
-            barcodes.firstOrNull()?.rawValue?.let { raw ->
-                if (scanned.compareAndSet(false, true)) {
-                    onBarcodeDetected(raw)
-                }
+
+    decodeComicBarcodeWithZxing(imageProxy, zxingReader)?.let { raw ->
+        if (scanned.compareAndSet(false, true)) {
+            AppLog.d("ComicTrackerBarcode", "ZXing detected comic barcode raw=$raw")
+            onBarcodeDetected(raw)
+        }
+        imageProxy.close()
+        return
+    }
+
+    val barcodeTask = scanner.process(inputImage)
+    val textTask = textRecognizer.process(inputImage)
+
+    Tasks.whenAllComplete(barcodeTask, textTask).addOnCompleteListener {
+        try {
+            val barcodes = if (barcodeTask.isSuccessful) barcodeTask.result ?: emptyList() else emptyList()
+            val visionText: Text? = if (textTask.isSuccessful) textTask.result else null
+
+            if (barcodes.isNotEmpty()) {
+                AppLog.d(
+                    "ComicTrackerBarcode",
+                    "ML Kit detected barcodes=${barcodes.map { "format=${it.format}, raw=${it.rawValue}" }}"
+                )
+            }
+
+            val upcRaw = barcodes.firstOrNull()?.rawValue?.filter { it.isDigit() }
+            val combined = if (upcRaw?.length == 12 && visionText != null) {
+                findSupplementInText(visionText, upcRaw)?.let { supplement ->
+                    AppLog.d("ComicTrackerBarcode", "OCR supplement=$supplement combined with UPC=$upcRaw")
+                    upcRaw + supplement
+                } ?: upcRaw
+            } else {
+                upcRaw
+            }
+
+            combined?.let { raw ->
+                emitIfReady(raw, accumulator, scanned, onBarcodeDetected)
+            } ?: accumulator.readyPending()?.let { raw ->
+                emitBarcode(raw, "Pending UPC delay elapsed", scanned, onBarcodeDetected)
+            }
+        } finally {
+            imageProxy.close()
+        }
+    }
+}
+
+private fun createZxingReader(): MultiFormatReader =
+    MultiFormatReader().apply {
+        setHints(
+            mapOf(
+                DecodeHintType.POSSIBLE_FORMATS to listOf(
+                    BarcodeFormat.UPC_A,
+                    BarcodeFormat.EAN_13,
+                    BarcodeFormat.UPC_E
+                ),
+                DecodeHintType.ALLOWED_EAN_EXTENSIONS to intArrayOf(5),
+                DecodeHintType.TRY_HARDER to true
+            )
+        )
+    }
+
+private fun emitIfReady(
+    raw: String,
+    accumulator: BarcodeScanAccumulator,
+    scanned: AtomicBoolean,
+    onBarcodeDetected: (String) -> Unit
+) {
+    val digits = raw.filter { it.isDigit() }
+    val ready = accumulator.accept(digits)
+    if (ready != null) {
+        emitBarcode(ready, "Barcode ready", scanned, onBarcodeDetected)
+    }
+}
+
+private fun emitBarcode(
+    raw: String,
+    reason: String,
+    scanned: AtomicBoolean,
+    onBarcodeDetected: (String) -> Unit
+) {
+    if (scanned.compareAndSet(false, true)) {
+        AppLog.d("ComicTrackerBarcode", "$reason raw=$raw")
+        onBarcodeDetected(raw)
+    }
+}
+
+private class BarcodeScanAccumulator {
+    private var pendingUpc: String? = null
+    private var pendingSinceMillis: Long = 0L
+
+    @Synchronized
+    fun accept(raw: String): String? {
+        if (raw.isBlank()) return null
+        if (raw.length > UPC_A_LENGTH) {
+            clear()
+            return raw
+        }
+        if (raw.length != UPC_A_LENGTH) return null
+
+        val now = System.currentTimeMillis()
+        if (pendingUpc != raw) {
+            pendingUpc = raw
+            pendingSinceMillis = now
+            AppLog.d(
+                "ComicTrackerBarcode",
+                "Holding UPC-A raw=$raw while looking for 5-digit supplemental"
+            )
+            return null
+        }
+
+        return if (now - pendingSinceMillis >= SUPPLEMENTAL_WAIT_MILLIS) {
+            AppLog.d("ComicTrackerBarcode", "No supplemental found for UPC-A raw=$raw")
+            clear()
+            raw
+        } else {
+            null
+        }
+    }
+
+    @Synchronized
+    fun readyPending(): String? {
+        val raw = pendingUpc ?: return null
+        return if (System.currentTimeMillis() - pendingSinceMillis >= SUPPLEMENTAL_WAIT_MILLIS) {
+            clear()
+            raw
+        } else {
+            null
+        }
+    }
+
+    private fun clear() {
+        pendingUpc = null
+        pendingSinceMillis = 0L
+    }
+
+    private companion object {
+        const val UPC_A_LENGTH = 12
+        const val SUPPLEMENTAL_WAIT_MILLIS = 3000L
+    }
+}
+
+private fun decodeComicBarcodeWithZxing(
+    imageProxy: ImageProxy,
+    reader: MultiFormatReader
+): String? {
+    val yPlane = imageProxy.planes.firstOrNull() ?: return null
+    val buffer = yPlane.buffer
+    val yData = ByteArray(buffer.remaining())
+    buffer.get(yData)
+
+    val width = imageProxy.width
+    val height = imageProxy.height
+    val rowStride = yPlane.rowStride
+    val source = PlanarYUVLuminanceSource(
+        yData,
+        rowStride,
+        height,
+        0,
+        0,
+        width,
+        height,
+        false
+    )
+
+    return try {
+        val result = decodeFromPossibleOrientations(source, reader) ?: return null
+        val main = result.text.filter { it.isDigit() }
+        val extension = (result.resultMetadata[ResultMetadataType.UPC_EAN_EXTENSION] as? String)
+            ?.filter { it.isDigit() }
+            .orEmpty()
+        val combined = if (extension.isNotEmpty() && !main.endsWith(extension)) {
+            main + extension
+        } else {
+            main
+        }
+
+        AppLog.d(
+            "ComicTrackerBarcode",
+            "ZXing decoded format=${result.barcodeFormat}, main=$main, extension=$extension, combined=$combined"
+        )
+        combined.takeIf { it.length > main.length }
+    } catch (_: NotFoundException) {
+        null
+    } catch (exception: Exception) {
+        AppLog.e("ComicTrackerBarcode", "ZXing barcode decode failed", exception)
+        null
+    } finally {
+        reader.reset()
+        buffer.rewind()
+    }
+}
+
+private fun findSupplementInText(text: Text, mainUpc: String): String? {
+    for (block in text.textBlocks) {
+        for (line in block.lines) {
+            val digits = line.text
+                .replace('O', '0').replace('o', '0')
+                .replace('I', '1').replace('l', '1')
+                .filter { it.isDigit() }
+            if (digits.length == 5 && !mainUpc.contains(digits)) {
+                return digits
             }
         }
-        .addOnCompleteListener { imageProxy.close() }
+    }
+    return null
+}
+
+private fun decodeFromPossibleOrientations(
+    source: LuminanceSource,
+    reader: MultiFormatReader
+) = buildList {
+    add(source)
+    if (source.isRotateSupported) {
+        val rotated = source.rotateCounterClockwise()
+        add(rotated)
+        add(rotated.rotateCounterClockwise())
+        add(rotated.rotateCounterClockwise().rotateCounterClockwise())
+    }
+}.firstNotNullOfOrNull { candidate ->
+    try {
+        reader.decodeWithState(BinaryBitmap(HybridBinarizer(candidate)))
+    } catch (_: NotFoundException) {
+        null
+    } finally {
+        reader.reset()
+    }
 }

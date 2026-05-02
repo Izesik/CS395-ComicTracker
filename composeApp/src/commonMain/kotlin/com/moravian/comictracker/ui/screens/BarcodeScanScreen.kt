@@ -66,6 +66,15 @@ fun BarcodeScanRoute(
                 },
                 onDismiss = onDismiss
             )
+            is BarcodeScanState.SupplementMissing -> NotFoundOverlay(
+                title = "Barcode incomplete",
+                message = "Keep both barcodes in frame and hold steady. The small barcode to the right of the main one must also be visible.",
+                onRetry = {
+                    scanSession += 1
+                    viewModel.reset()
+                },
+                onDismiss = onDismiss
+            )
             is BarcodeScanState.Error -> NotFoundOverlay(
                 title = "Lookup failed",
                 message = "Check your connection and Metron credentials, then try again.",

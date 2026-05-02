@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.moravian.comictracker.network.ComicVineApi
 import com.moravian.comictracker.network.ComicVineIssueSummary
 import com.moravian.comictracker.network.ComicVineVolume
+import com.moravian.comictracker.network.toUserFacingNetworkMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,7 +53,9 @@ class HomeViewModel : ViewModel() {
                 cachedSeries = series
                 _uiState.value = HomeUiState.SeriesSuccess(series)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(e.message ?: "Failed to load series")
+                _uiState.value = HomeUiState.Error(
+                    e.toUserFacingNetworkMessage("ComicVine", "Failed to load series")
+                )
             }
         }
     }
@@ -65,7 +68,9 @@ class HomeViewModel : ViewModel() {
                 cachedIssues = issues
                 _uiState.value = HomeUiState.IssuesSuccess(issues)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(e.message ?: "Failed to load issues")
+                _uiState.value = HomeUiState.Error(
+                    e.toUserFacingNetworkMessage("ComicVine", "Failed to load issues")
+                )
             }
         }
     }

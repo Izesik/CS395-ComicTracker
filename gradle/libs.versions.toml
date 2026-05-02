@@ -20,9 +20,11 @@ ksp = "2.3.6"
 ktor = "3.4.3"
 material3 = "1.10.0-alpha05"
 mlkit-barcode = "17.3.0"
+mlkit-text-recognition = "16.0.1"
 navigation = "2.9.2"
 room = "2.8.4"
 sqlite = "2.6.2"
+zxing = "3.5.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -59,7 +61,9 @@ ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "kto
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit-barcode" }
+mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkit-text-recognition" }
 sqlite-bundled = "androidx.sqlite:sqlite-bundled:2.6.2"
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 
 
 [plugins]

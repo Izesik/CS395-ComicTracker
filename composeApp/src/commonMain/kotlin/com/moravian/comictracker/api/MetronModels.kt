@@ -18,6 +18,12 @@ data class MetronIssueSummary(
 )
 
 @Serializable
+data class MetronIssue(
+    val id: Int,
+    @SerialName("cv_id") val cvId: Int? = null
+)
+
+@Serializable
 data class ComicVinePagedResponse<T>(
     val error: String = "",
     val results: List<T> = emptyList(),
