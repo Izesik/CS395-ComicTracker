@@ -7,7 +7,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
-actual fun PlatformWebView(url: String, modifier: Modifier) {
+actual fun PlatformWebView(
+    url: String,
+    modifier: Modifier,
+) {
     AndroidView(
         factory = { context ->
             WebView(context).apply {
@@ -17,6 +20,6 @@ actual fun PlatformWebView(url: String, modifier: Modifier) {
             }
         },
         update = { webView -> webView.loadUrl(url) },
-        modifier = modifier
+        modifier = modifier,
     )
 }

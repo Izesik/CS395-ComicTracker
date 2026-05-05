@@ -13,14 +13,23 @@ import kotlinx.coroutines.launch
 sealed class BarcodeScanState {
     /** Waiting for a barcode to be detected by the camera. */
     data object Scanning : BarcodeScanState()
+
     /** A barcode was detected and the Metron API is being queried for [upc]. */
-    data class Loading(val upc: String) : BarcodeScanState()
+    data class Loading(
+        val upc: String,
+    ) : BarcodeScanState()
+
     /** An issue was found; [issueId] is the ComicVine issue ID to navigate to. */
-    data class Found(val issueId: Int) : BarcodeScanState()
+    data class Found(
+        val issueId: Int,
+    ) : BarcodeScanState()
+
     /** The barcode was not found in the Metron database. */
     data object NotFound : BarcodeScanState()
+
     /** Only the main UPC-A barcode was visible; the 5-digit supplement was missing. */
     data object SupplementMissing : BarcodeScanState()
+
     /** A network or API error occurred during lookup. */
     data object Error : BarcodeScanState()
 }
@@ -62,19 +71,20 @@ class BarcodeScanViewModel : ViewModel() {
         }
         state = BarcodeScanState.Loading(normalizedUpc)
         viewModelScope.launch {
-            state = try {
-                val summary = metron.searchByUpc(normalizedUpc).results.firstOrNull()
-                if (summary == null) {
-                    BarcodeScanState.NotFound
-                } else {
-                    val cvId = summary.cvId ?: metron.getIssue(summary.id).cvId
-                    AppLog.d(TAG, "Barcode lookup resolved cvIssueId=$cvId")
-                    if (cvId != null) BarcodeScanState.Found(cvId) else BarcodeScanState.NotFound
+            state =
+                try {
+                    val summary = metron.searchByUpc(normalizedUpc).results.firstOrNull()
+                    if (summary == null) {
+                        BarcodeScanState.NotFound
+                    } else {
+                        val cvId = summary.cvId ?: metron.getIssue(summary.id).cvId
+                        AppLog.d(TAG, "Barcode lookup resolved cvIssueId=$cvId")
+                        if (cvId != null) BarcodeScanState.Found(cvId) else BarcodeScanState.NotFound
+                    }
+                } catch (exception: Exception) {
+                    AppLog.e(TAG, "Barcode lookup failed for upc=$normalizedUpc", exception)
+                    BarcodeScanState.Error
                 }
-            } catch (exception: Exception) {
-                AppLog.e(TAG, "Barcode lookup failed for upc=$normalizedUpc", exception)
-                BarcodeScanState.Error
-            }
         }
     }
 
@@ -85,6 +95,7 @@ class BarcodeScanViewModel : ViewModel() {
 
     private companion object {
         const val TAG = "ComicTrackerBarcode"
+
         /** A raw UPC-A barcode without its 5-digit supplement is too short for Metron. */
         const val UPC_A_ONLY_LENGTH = 12
     }

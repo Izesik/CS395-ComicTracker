@@ -23,10 +23,16 @@ import kotlin.reflect.KClass
 sealed class IssueDetailUiState {
     /** Issue data is being loaded from the API. */
     data object Loading : IssueDetailUiState()
+
     /** Issue loaded successfully. */
-    data class Success(val issue: ComicVineIssue) : IssueDetailUiState()
+    data class Success(
+        val issue: ComicVineIssue,
+    ) : IssueDetailUiState()
+
     /** A network or API error occurred; [message] is suitable for display. */
-    data class Error(val message: String) : IssueDetailUiState()
+    data class Error(
+        val message: String,
+    ) : IssueDetailUiState()
 }
 
 /**
@@ -37,15 +43,17 @@ sealed class IssueDetailUiState {
  */
 class IssueDetailViewModel(
     private val issueId: Int,
-    private val dao: ComicDao
+    private val dao: ComicDao,
 ) : ViewModel() {
     private val api = ComicVineApi()
 
     private val _uiState = MutableStateFlow<IssueDetailUiState>(IssueDetailUiState.Loading)
+
     /** Current state of the issue detail content area. */
     val uiState: StateFlow<IssueDetailUiState> = _uiState.asStateFlow()
 
     private val _addState = MutableStateFlow<AddCollectionState>(AddCollectionState.Checking)
+
     /** Current state of the add/remove collection button. */
     val addState: StateFlow<AddCollectionState> = _addState.asStateFlow()
 
@@ -61,9 +69,10 @@ class IssueDetailViewModel(
                 val issue = api.getIssue(issueId)
                 _uiState.value = IssueDetailUiState.Success(issue)
             } catch (e: Exception) {
-                _uiState.value = IssueDetailUiState.Error(
-                    e.toUserFacingNetworkMessage("ComicVine", "Failed to load issue")
-                )
+                _uiState.value =
+                    IssueDetailUiState.Error(
+                        e.toUserFacingNetworkMessage("ComicVine", "Failed to load issue"),
+                    )
             }
         }
     }
@@ -95,42 +104,44 @@ class IssueDetailViewModel(
         viewModelScope.launch {
             _addState.value = AddCollectionState.Adding
 
-            val seriesId = if (issue.volume != null) {
-                val existing = dao.getSeriesByComicVineId(issue.volume.id)
-                existing?.id ?: dao.insertSeries(
-                    SeriesEntity(
-                        comicvineId = issue.volume.id,
-                        title = issue.volume.name,
-                        coverImageUrl = issue.image?.coverUrl()
+            val seriesId =
+                if (issue.volume != null) {
+                    val existing = dao.getSeriesByComicVineId(issue.volume.id)
+                    existing?.id ?: dao.insertSeries(
+                        SeriesEntity(
+                            comicvineId = issue.volume.id,
+                            title = issue.volume.name,
+                            coverImageUrl = issue.image?.coverUrl(),
+                        ),
                     )
-                )
-            } else {
-                dao.insertSeries(
-                    SeriesEntity(
-                        comicvineId = issueId,
-                        title = "Issue #${issue.issueNumber}",
-                        coverImageUrl = issue.image?.coverUrl()
+                } else {
+                    dao.insertSeries(
+                        SeriesEntity(
+                            comicvineId = issueId,
+                            title = "Issue #${issue.issueNumber}",
+                            coverImageUrl = issue.image?.coverUrl(),
+                        ),
                     )
-                )
-            }
+                }
 
-            val issueRowId = dao.insertComicIssue(
-                ComicIssueEntity(
-                    comicvineId = issue.id,
-                    seriesId = seriesId,
-                    issueNumber = issue.issueNumber.toIntOrNull() ?: 0,
-                    title = "#${issue.issueNumber}",
-                    coverImageUrl = issue.image?.coverUrl()
+            val issueRowId =
+                dao.insertComicIssue(
+                    ComicIssueEntity(
+                        comicvineId = issue.id,
+                        seriesId = seriesId,
+                        issueNumber = issue.issueNumber.toIntOrNull() ?: 0,
+                        title = "#${issue.issueNumber}",
+                        coverImageUrl = issue.image?.coverUrl(),
+                    ),
                 )
-            )
             issue.personCredits.forEach { credit ->
                 dao.insertCreator(
                     CreatorEntity(
                         issueId = issueRowId,
                         comicvineId = credit.id,
                         name = credit.name,
-                        role = credit.role
-                    )
+                        role = credit.role,
+                    ),
                 )
             }
             _addState.value = AddCollectionState.Added
@@ -139,11 +150,16 @@ class IssueDetailViewModel(
 
     companion object {
         /** Creates a factory that injects [issueId] and [database]. */
-        fun factory(issueId: Int, database: ComicTrackerDatabase): ViewModelProvider.Factory =
+        fun factory(
+            issueId: Int,
+            database: ComicTrackerDatabase,
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T =
-                    IssueDetailViewModel(issueId, database.comicDao()) as T
+                override fun <T : ViewModel> create(
+                    modelClass: KClass<T>,
+                    extras: CreationExtras,
+                ): T = IssueDetailViewModel(issueId, database.comicDao()) as T
             }
     }
 }

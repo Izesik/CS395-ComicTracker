@@ -56,12 +56,19 @@ private val TextMuted = Color(0xFF888888)
 sealed class SearchUiState {
     /** No search has been performed yet. */
     data object Idle : SearchUiState()
+
     /** A search request is in flight. */
     data object Loading : SearchUiState()
+
     /** Search completed with [results]. */
-    data class Success(val results: List<ComicVineVolume>) : SearchUiState()
+    data class Success(
+        val results: List<ComicVineVolume>,
+    ) : SearchUiState()
+
     /** Search failed with a user-facing [message]. */
-    data class Error(val message: String) : SearchUiState()
+    data class Error(
+        val message: String,
+    ) : SearchUiState()
 }
 
 /**
@@ -72,7 +79,7 @@ sealed class SearchUiState {
  */
 class SearchViewModel(
     private val prefsRepository: UserPreferencesRepository,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val comicVine = ComicVineApi()
 
@@ -84,8 +91,9 @@ class SearchViewModel(
         private set
 
     /** Persisted layout preference (grid vs. list) for search results. */
-    val searchLayout: StateFlow<SearchLayout> = prefsRepository.searchLayout
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SearchLayout.GRID)
+    val searchLayout: StateFlow<SearchLayout> =
+        prefsRepository.searchLayout
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SearchLayout.GRID)
 
     /** Updates [searchQuery] and persists it in [SavedStateHandle]. */
     fun onQueryChange(newQuery: String) {
@@ -104,9 +112,10 @@ class SearchViewModel(
                 val results = comicVine.searchVolumes(query)
                 uiState = SearchUiState.Success(results)
             } catch (e: Exception) {
-                uiState = SearchUiState.Error(
-                    e.toUserFacingNetworkMessage("ComicVine", "Search failed")
-                )
+                uiState =
+                    SearchUiState.Error(
+                        e.toUserFacingNetworkMessage("ComicVine", "Search failed"),
+                    )
             }
         }
     }
@@ -126,8 +135,10 @@ class SearchViewModel(
         fun factory(prefsRepository: UserPreferencesRepository): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T =
-                    SearchViewModel(prefsRepository, extras.createSavedStateHandle()) as T
+                override fun <T : ViewModel> create(
+                    modelClass: KClass<T>,
+                    extras: CreationExtras,
+                ): T = SearchViewModel(prefsRepository, extras.createSavedStateHandle()) as T
             }
     }
 }
@@ -136,23 +147,25 @@ class SearchViewModel(
 @Composable
 fun SeriesSearchCard(
     result: ComicVineVolume,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(CardBackground)
-            .clickable(onClick = onClick)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(CardBackground)
+                .clickable(onClick = onClick)
+                .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(56.dp, 84.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(CoverPlaceholder),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(56.dp, 84.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(CoverPlaceholder),
+            contentAlignment = Alignment.Center,
         ) {
             val imageUrl = result.image?.coverUrl()
             if (imageUrl != null) {
@@ -160,7 +173,7 @@ fun SeriesSearchCard(
                     model = imageUrl,
                     contentDescription = result.name,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.matchParentSize()
+                    modifier = Modifier.matchParentSize(),
                 )
             } else {
                 Text(
@@ -169,7 +182,7 @@ fun SeriesSearchCard(
                     fontSize = 9.sp,
                     maxLines = 4,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(6.dp)
+                    modifier = Modifier.padding(6.dp),
                 )
             }
         }
@@ -183,7 +196,7 @@ fun SeriesSearchCard(
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 15.sp,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
             result.publisher?.name?.let {
                 Text(
@@ -191,14 +204,14 @@ fun SeriesSearchCard(
                     color = TextMuted,
                     fontSize = 13.sp,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             result.startYear?.let {
                 Text(
                     text = it,
                     color = TextMuted,
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
                 )
             }
         }

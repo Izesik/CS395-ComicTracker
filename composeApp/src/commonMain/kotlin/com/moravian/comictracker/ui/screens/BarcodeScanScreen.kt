@@ -41,14 +41,17 @@ import org.jetbrains.compose.resources.stringResource
 
 /** Platform-specific camera preview that invokes [onBarcodeDetected] when a barcode is decoded. */
 @Composable
-expect fun BarcodeCameraView(onBarcodeDetected: (String) -> Unit, onDismiss: () -> Unit)
+expect fun BarcodeCameraView(
+    onBarcodeDetected: (String) -> Unit,
+    onDismiss: () -> Unit,
+)
 
 /** Top-level route for barcode scanning; handles state transitions from scanning to issue navigation. */
 @Composable
 fun BarcodeScanRoute(
     onIssueFound: (issueId: Int) -> Unit,
     onDismiss: () -> Unit,
-    viewModel: BarcodeScanViewModel = viewModel()
+    viewModel: BarcodeScanViewModel = viewModel { BarcodeScanViewModel() },
 ) {
     val scanState = viewModel.state
     var scanSession by remember { mutableIntStateOf(0) }
@@ -63,39 +66,51 @@ fun BarcodeScanRoute(
         key(scanSession) {
             BarcodeCameraView(
                 onBarcodeDetected = { viewModel.onBarcodeScanned(it) },
-                onDismiss = onDismiss
+                onDismiss = onDismiss,
             )
         }
 
         when (scanState) {
-            is BarcodeScanState.Loading -> LoadingOverlay(upc = scanState.upc)
-            is BarcodeScanState.NotFound -> NotFoundOverlay(
-                title = stringResource(Res.string.comic_not_found_title),
-                message = stringResource(Res.string.comic_not_found_message),
-                onRetry = {
-                    scanSession += 1
-                    viewModel.reset()
-                },
-                onDismiss = onDismiss
-            )
-            is BarcodeScanState.SupplementMissing -> NotFoundOverlay(
-                title = stringResource(Res.string.barcode_incomplete_title),
-                message = stringResource(Res.string.barcode_incomplete_message),
-                onRetry = {
-                    scanSession += 1
-                    viewModel.reset()
-                },
-                onDismiss = onDismiss
-            )
-            is BarcodeScanState.Error -> NotFoundOverlay(
-                title = stringResource(Res.string.lookup_failed_title),
-                message = stringResource(Res.string.lookup_failed_message),
-                onRetry = {
-                    scanSession += 1
-                    viewModel.reset()
-                },
-                onDismiss = onDismiss
-            )
+            is BarcodeScanState.Loading -> {
+                LoadingOverlay(upc = scanState.upc)
+            }
+
+            is BarcodeScanState.NotFound -> {
+                NotFoundOverlay(
+                    title = stringResource(Res.string.comic_not_found_title),
+                    message = stringResource(Res.string.comic_not_found_message),
+                    onRetry = {
+                        scanSession += 1
+                        viewModel.reset()
+                    },
+                    onDismiss = onDismiss,
+                )
+            }
+
+            is BarcodeScanState.SupplementMissing -> {
+                NotFoundOverlay(
+                    title = stringResource(Res.string.barcode_incomplete_title),
+                    message = stringResource(Res.string.barcode_incomplete_message),
+                    onRetry = {
+                        scanSession += 1
+                        viewModel.reset()
+                    },
+                    onDismiss = onDismiss,
+                )
+            }
+
+            is BarcodeScanState.Error -> {
+                NotFoundOverlay(
+                    title = stringResource(Res.string.lookup_failed_title),
+                    message = stringResource(Res.string.lookup_failed_message),
+                    onRetry = {
+                        scanSession += 1
+                        viewModel.reset()
+                    },
+                    onDismiss = onDismiss,
+                )
+            }
+
             else -> {}
         }
     }
@@ -104,10 +119,11 @@ fun BarcodeScanRoute(
 @Composable
 private fun LoadingOverlay(upc: String) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.65f)),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.65f)),
+        contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator(color = Color.White)
@@ -122,29 +138,30 @@ private fun NotFoundOverlay(
     title: String,
     message: String,
     onRetry: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.80f)),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.80f)),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 40.dp)
+            modifier = Modifier.padding(horizontal = 40.dp),
         ) {
             Text(
                 text = title,
                 color = Color.White,
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = message,
                 color = Color(0xFFAAAAAA),
                 style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(onClick = onRetry) { Text(stringResource(Res.string.scan_again)) }

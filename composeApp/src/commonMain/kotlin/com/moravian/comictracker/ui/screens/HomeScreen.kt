@@ -57,15 +57,16 @@ private val AccentAmber = Color(0xFFFFB300)
 fun HomeScreen(
     onVolumeClick: (Int) -> Unit = {},
     onIssueClick: (Int) -> Unit = {},
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(HomeBackground)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(HomeBackground),
     ) {
         Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 12.dp)) {
             Text(
@@ -73,7 +74,7 @@ fun HomeScreen(
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = TextPrimary,
-                letterSpacing = (-0.5).sp
+                letterSpacing = (-0.5).sp,
             )
             Spacer(modifier = Modifier.height(14.dp))
             TabRow(selectedTab = selectedTab, onTabSelected = viewModel::selectTab)
@@ -85,40 +86,43 @@ fun HomeScreen(
                     CircularProgressIndicator(color = AccentAmber)
                 }
             }
+
             is HomeUiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         text = state.message,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
             }
+
             is HomeUiState.SeriesSuccess -> {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     items(state.series) { series ->
                         SeriesCard(series = series, onClick = { onVolumeClick(series.id) })
                     }
                 }
             }
+
             is HomeUiState.IssuesSuccess -> {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     items(state.issues) { issue ->
                         IssueCard(
                             issue = issue,
-                            onClick = { onIssueClick(issue.id) }
+                            onClick = { onIssueClick(issue.id) },
                         )
                     }
                 }
@@ -128,55 +132,68 @@ fun HomeScreen(
 }
 
 @Composable
-private fun TabRow(selectedTab: HomeTab, onTabSelected: (HomeTab) -> Unit) {
+private fun TabRow(
+    selectedTab: HomeTab,
+    onTabSelected: (HomeTab) -> Unit,
+) {
     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
         HomeTab.entries.forEach { tab ->
             TabLabel(
                 text = tab.name,
                 selected = selectedTab == tab,
-                onClick = { onTabSelected(tab) }
+                onClick = { onTabSelected(tab) },
             )
         }
     }
 }
 
 @Composable
-private fun TabLabel(text: String, selected: Boolean, onClick: () -> Unit) {
+private fun TabLabel(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick)
+        modifier = Modifier.clickable(onClick = onClick),
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            color = if (selected) TextPrimary else TextMuted
+            color = if (selected) TextPrimary else TextMuted,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Box(
-            modifier = Modifier
-                .width(if (selected) 20.dp else 0.dp)
-                .height(2.dp)
-                .clip(CircleShape)
-                .background(AccentAmber)
+            modifier =
+                Modifier
+                    .width(if (selected) 20.dp else 0.dp)
+                    .height(2.dp)
+                    .clip(CircleShape)
+                    .background(AccentAmber),
         )
     }
 }
 
 @Composable
-private fun SeriesCard(series: ComicVineVolume, onClick: () -> Unit) {
+private fun SeriesCard(
+    series: ComicVineVolume,
+    onClick: () -> Unit,
+) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.67f)
-                .clip(RoundedCornerShape(6.dp))
-                .background(CardBackground),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.67f)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(CardBackground),
+            contentAlignment = Alignment.Center,
         ) {
             val imageUrl = series.image?.coverUrl()
             if (imageUrl != null) {
@@ -184,7 +201,7 @@ private fun SeriesCard(series: ComicVineVolume, onClick: () -> Unit) {
                     model = imageUrl,
                     contentDescription = series.name,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 )
             } else {
                 Text(
@@ -193,7 +210,7 @@ private fun SeriesCard(series: ComicVineVolume, onClick: () -> Unit) {
                     color = TextMuted,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(6.dp)
+                    modifier = Modifier.padding(6.dp),
                 )
             }
         }
@@ -203,52 +220,58 @@ private fun SeriesCard(series: ComicVineVolume, onClick: () -> Unit) {
             style = MaterialTheme.typography.labelMedium,
             color = TextPrimary,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
         )
         if (series.startYear != null) {
             Text(
                 text = series.startYear,
                 style = MaterialTheme.typography.labelSmall,
                 color = TextMuted,
-                maxLines = 1
+                maxLines = 1,
             )
         }
     }
 }
 
 @Composable
-private fun IssueCard(issue: ComicVineIssueSummary, onClick: () -> Unit) {
+private fun IssueCard(
+    issue: ComicVineIssueSummary,
+    onClick: () -> Unit,
+) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.67f)
-                .clip(RoundedCornerShape(6.dp))
-                .background(CardBackground)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.67f)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(CardBackground),
         ) {
             AsyncImage(
                 model = issue.image?.coverUrl(),
                 contentDescription = issue.volume?.name,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
             // Issue number badge
             Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(4.dp)
-                    .background(Color.Black.copy(alpha = 0.72f), RoundedCornerShape(4.dp))
-                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .background(Color.Black.copy(alpha = 0.72f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 5.dp, vertical = 2.dp),
             ) {
                 Text(
                     text = "#${issue.issueNumber}",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextPrimary,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
                 )
             }
         }
@@ -258,14 +281,14 @@ private fun IssueCard(issue: ComicVineIssueSummary, onClick: () -> Unit) {
             style = MaterialTheme.typography.labelMedium,
             color = TextPrimary,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
         )
         if (issue.coverDate != null) {
             Text(
                 text = issue.coverDate,
                 style = MaterialTheme.typography.labelSmall,
                 color = TextMuted,
-                maxLines = 1
+                maxLines = 1,
             )
         }
     }

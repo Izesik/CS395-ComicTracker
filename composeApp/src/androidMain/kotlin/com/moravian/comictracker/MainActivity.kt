@@ -32,12 +32,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
         setContent {
             App(
                 database = getComicTrackerDatabase(getDatabaseBuilder(this)),
-                prefsRepository = UserPreferencesRepository(prefsDataStore)
+                prefsRepository = UserPreferencesRepository(prefsDataStore),
             )
         }
     }

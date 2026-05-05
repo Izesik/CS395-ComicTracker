@@ -13,4 +13,7 @@ import androidx.compose.ui.Modifier
  * @param modifier Modifier applied to the WebView container.
  */
 @Composable
-expect fun PlatformWebView(url: String, modifier: Modifier = Modifier)
+expect fun PlatformWebView(
+    url: String,
+    modifier: Modifier = Modifier,
+)

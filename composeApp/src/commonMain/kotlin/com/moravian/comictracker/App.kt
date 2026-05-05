@@ -55,9 +55,13 @@ import comictracker.composeapp.generated.resources.screen_search
 import org.jetbrains.compose.resources.stringResource
 
 /** Navigation destinations with their route identifiers. */
-sealed class Screen(val route: String) {
+sealed class Screen(
+    val route: String,
+) {
     object Home : Screen("home")
+
     object MyCollection : Screen("my_collection")
+
     object Search : Screen("search")
 }
 
@@ -71,7 +75,10 @@ private val hideBottomBarPrefixes = listOf("comic_detail", "issue_detail", "webv
  * instances from [MainActivity] and passes them to screens that need them.
  */
 @Composable
-fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesRepository) {
+fun App(
+    database: ComicTrackerDatabase,
+    prefsRepository: UserPreferencesRepository,
+) {
     ComicTrackerTheme {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -91,11 +98,11 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                         onClick = { navController.navigate("barcode_scan") },
                         shape = CircleShape,
                         containerColor = Amber,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
                     ) {
                         Icon(
                             imageVector = Icons.Filled.QrCodeScanner,
-                            contentDescription = stringResource(Res.string.scan_barcode_cd)
+                            contentDescription = stringResource(Res.string.scan_barcode_cd),
                         )
                     }
                 }
@@ -108,11 +115,14 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     ) {
                         navItems.forEach { screen ->
                             val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                            val screenLabel = stringResource(when (screen) {
-                                Screen.Home -> Res.string.screen_home
-                                Screen.MyCollection -> Res.string.screen_collection
-                                Screen.Search -> Res.string.screen_search
-                            })
+                            val screenLabel =
+                                stringResource(
+                                    when (screen) {
+                                        Screen.Home -> Res.string.screen_home
+                                        Screen.MyCollection -> Res.string.screen_collection
+                                        Screen.Search -> Res.string.screen_search
+                                    },
+                                )
                             NavigationBarItem(
                                 selected = selected,
                                 onClick = {
@@ -126,60 +136,63 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                                 },
                                 icon = {
                                     Icon(
-                                        imageVector = when (screen) {
-                                            Screen.Home -> Icons.Filled.Home
-                                            Screen.MyCollection -> Icons.Filled.Star
-                                            Screen.Search -> Icons.Filled.Search
-                                        },
-                                        contentDescription = screenLabel
+                                        imageVector =
+                                            when (screen) {
+                                                Screen.Home -> Icons.Filled.Home
+                                                Screen.MyCollection -> Icons.Filled.Star
+                                                Screen.Search -> Icons.Filled.Search
+                                            },
+                                        contentDescription = screenLabel,
                                     )
                                 },
                                 label = { Text(screenLabel) },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = Amber,
-                                    selectedTextColor = Amber,
-                                    indicatorColor = AmberSubtle,
-                                    unselectedIconColor = ColorOnSurfaceMuted,
-                                    unselectedTextColor = ColorOnSurfaceMuted,
-                                )
+                                colors =
+                                    NavigationBarItemDefaults.colors(
+                                        selectedIconColor = Amber,
+                                        selectedTextColor = Amber,
+                                        indicatorColor = AmberSubtle,
+                                        unselectedIconColor = ColorOnSurfaceMuted,
+                                        unselectedTextColor = ColorOnSurfaceMuted,
+                                    ),
                             )
                         }
                     }
                 }
-            }
+            },
         ) { innerPadding ->
             NavHost(
                 navController = navController,
                 startDestination = Screen.Home.route,
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(innerPadding),
             ) {
                 composable(Screen.Home.route) {
                     HomeScreen(
                         onVolumeClick = { navController.navigate("comic_detail/$it") },
                         onIssueClick = { navController.navigate("issue_detail/$it") },
-                        viewModel = viewModel { HomeViewModel(prefsRepository) }
+                        viewModel = viewModel { HomeViewModel(prefsRepository) },
                     )
                 }
                 composable(Screen.MyCollection.route) {
                     CollectionScreen(
                         viewModel = viewModel(factory = CollectionViewModel.factory(database, prefsRepository)),
-                        onSeriesClick = { navController.navigate("comic_detail/$it") }
+                        onSeriesClick = { navController.navigate("comic_detail/$it") },
                     )
                 }
                 composable(Screen.Search.route) {
-                    val searchViewModel: SearchViewModel = viewModel(
-                        factory = SearchViewModel.factory(prefsRepository)
-                    )
+                    val searchViewModel: SearchViewModel =
+                        viewModel(
+                            factory = SearchViewModel.factory(prefsRepository),
+                        )
                     SearchScreen(
                         viewModel = searchViewModel,
                         onComicClick = { seriesId ->
                             navController.navigate("comic_detail/$seriesId")
-                        }
+                        },
                     )
                 }
                 composable(
                     route = "comic_detail/{seriesId}",
-                    arguments = listOf(navArgument("seriesId") { type = NavType.StringType })
+                    arguments = listOf(navArgument("seriesId") { type = NavType.StringType }),
                 ) { backStackEntry ->
                     val seriesId = backStackEntry.savedStateHandle.get<String>("seriesId")?.toIntOrNull() ?: return@composable
                     ComicDetailScreen(
@@ -188,19 +201,19 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                         database = database,
                         prefsRepository = prefsRepository,
                         onIssueClick = { navController.navigate("issue_detail/$it") },
-                        onViewOnComicVine = { navController.navigate("webview/series/$seriesId") }
+                        onViewOnComicVine = { navController.navigate("webview/series/$seriesId") },
                     )
                 }
                 composable(
                     route = "issue_detail/{issueId}",
-                    arguments = listOf(navArgument("issueId") { type = NavType.StringType })
+                    arguments = listOf(navArgument("issueId") { type = NavType.StringType }),
                 ) { backStackEntry ->
                     val issueId = backStackEntry.savedStateHandle.get<String>("issueId")?.toIntOrNull() ?: return@composable
                     IssueDetailScreen(
                         issueId = issueId,
                         onBack = { navController.popBackStack() },
                         database = database,
-                        onViewOnComicVine = { navController.navigate("webview/issue/$issueId") }
+                        onViewOnComicVine = { navController.navigate("webview/issue/$issueId") },
                     )
                 }
                 composable("barcode_scan") {
@@ -209,27 +222,29 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                             navController.popBackStack()
                             navController.navigate("issue_detail/$issueId")
                         },
-                        onDismiss = { navController.popBackStack() }
+                        onDismiss = { navController.popBackStack() },
                     )
                 }
                 composable(
                     route = "webview/{type}/{id}",
-                    arguments = listOf(
-                        navArgument("type") { type = NavType.StringType },
-                        navArgument("id") { type = NavType.StringType }
-                    )
+                    arguments =
+                        listOf(
+                            navArgument("type") { type = NavType.StringType },
+                            navArgument("id") { type = NavType.StringType },
+                        ),
                 ) { backStackEntry ->
                     val type = backStackEntry.savedStateHandle.get<String>("type") ?: return@composable
                     val id = backStackEntry.savedStateHandle.get<String>("id") ?: return@composable
-                    val url = when (type) {
-                        "series" -> "https://comicvine.gamespot.com/volume/4050-$id/"
-                        "issue" -> "https://comicvine.gamespot.com/issue/4000-$id/"
-                        else -> return@composable
-                    }
+                    val url =
+                        when (type) {
+                            "series" -> "https://comicvine.gamespot.com/volume/4050-$id/"
+                            "issue" -> "https://comicvine.gamespot.com/issue/4000-$id/"
+                            else -> return@composable
+                        }
                     ComicWebViewScreen(
                         url = url,
                         title = stringResource(Res.string.comicvine_label),
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() },
                     )
                 }
             }

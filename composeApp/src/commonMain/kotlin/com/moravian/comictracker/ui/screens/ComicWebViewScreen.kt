@@ -21,14 +21,19 @@ private val WebViewTextPrimary = Color.White
 
 /** Full-screen WebView for browsing a ComicVine series or issue page in-app. */
 @Composable
-fun ComicWebViewScreen(url: String, title: String, onBack: () -> Unit) {
+fun ComicWebViewScreen(
+    url: String,
+    title: String,
+    onBack: () -> Unit,
+) {
     Column(modifier = Modifier.fillMaxSize().background(WebViewBackground)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFF1E1E1E))
-                .padding(end = 16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1E1E1E))
+                    .padding(end = 16.dp),
         ) {
             PlatformBackButton(onBack = onBack, overlaid = false)
             Text(
@@ -36,7 +41,7 @@ fun ComicWebViewScreen(url: String, title: String, onBack: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = WebViewTextPrimary,
-                maxLines = 1
+                maxLines = 1,
             )
         }
         PlatformWebView(url = url, modifier = Modifier.fillMaxSize())

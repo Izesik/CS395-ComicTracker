@@ -91,9 +91,10 @@ fun ComicDetailScreen(
     prefsRepository: UserPreferencesRepository,
     onIssueClick: (Int) -> Unit = {},
     onViewOnComicVine: () -> Unit = {},
-    viewModel: ComicDetailViewModel = viewModel(
-        factory = ComicDetailViewModel.factory(seriesId, database, prefsRepository)
-    )
+    viewModel: ComicDetailViewModel =
+        viewModel(
+            factory = ComicDetailViewModel.factory(seriesId, database, prefsRepository),
+        ),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val addState by viewModel.addState.collectAsStateWithLifecycle()
@@ -109,30 +110,34 @@ fun ComicDetailScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = TextPrimary)
                 TopBackButton(onBack = onBack)
             }
+
             is ComicDetailUiState.Error -> {
                 Text(
                     text = state.message,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center).padding(24.dp)
+                    modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 )
                 TopBackButton(onBack = onBack)
             }
-            is ComicDetailUiState.Success -> DetailContent(
-                series = state.series,
-                displayedIssues = displayedIssues,
-                collectionIssueIds = collectionIssueIds,
-                creators = seriesCreators,
-                sortOrder = sortOrder,
-                collectionFilter = collectionFilter,
-                onToggleSort = { viewModel.toggleSortOrder() },
-                onSetFilter = { viewModel.setCollectionFilter(it) },
-                onBack = onBack,
-                addState = addState,
-                onAddToCollection = { viewModel.addToCollection() },
-                onRemoveFromCollection = { viewModel.removeFromCollection() },
-                onIssueClick = onIssueClick,
-                onViewOnComicVine = onViewOnComicVine
-            )
+
+            is ComicDetailUiState.Success -> {
+                DetailContent(
+                    series = state.series,
+                    displayedIssues = displayedIssues,
+                    collectionIssueIds = collectionIssueIds,
+                    creators = seriesCreators,
+                    sortOrder = sortOrder,
+                    collectionFilter = collectionFilter,
+                    onToggleSort = { viewModel.toggleSortOrder() },
+                    onSetFilter = { viewModel.setCollectionFilter(it) },
+                    onBack = onBack,
+                    addState = addState,
+                    onAddToCollection = { viewModel.addToCollection() },
+                    onRemoveFromCollection = { viewModel.removeFromCollection() },
+                    onIssueClick = onIssueClick,
+                    onViewOnComicVine = onViewOnComicVine,
+                )
+            }
         }
     }
 }
@@ -152,7 +157,7 @@ private fun DetailContent(
     onAddToCollection: () -> Unit,
     onRemoveFromCollection: () -> Unit,
     onIssueClick: (Int) -> Unit,
-    onViewOnComicVine: () -> Unit
+    onViewOnComicVine: () -> Unit,
 ) {
     val coverUrl = series.image?.coverUrl()
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -163,48 +168,52 @@ private fun DetailContent(
                     model = coverUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 )
                 Box(
-                    modifier = Modifier.fillMaxSize().background(
-                        Brush.verticalGradient(
-                            0.0f to Color.Black.copy(alpha = 0.35f),
-                            0.45f to Color.Black.copy(alpha = 0.05f),
-                            1.0f to Color.Black.copy(alpha = 0.92f)
-                        )
-                    )
+                    modifier =
+                        Modifier.fillMaxSize().background(
+                            Brush.verticalGradient(
+                                0.0f to Color.Black.copy(alpha = 0.35f),
+                                0.45f to Color.Black.copy(alpha = 0.05f),
+                                1.0f to Color.Black.copy(alpha = 0.92f),
+                            ),
+                        ),
                 )
                 TopBackButton(onBack = onBack, modifier = Modifier.align(Alignment.TopStart))
                 Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    verticalAlignment = Alignment.Bottom
+                    verticalAlignment = Alignment.Bottom,
                 ) {
                     Card(
                         shape = RoundedCornerShape(8.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                        modifier = Modifier.width(88.dp).height(124.dp)
+                        modifier = Modifier.width(88.dp).height(124.dp),
                     ) {
                         AsyncImage(
                             model = coverUrl,
                             contentDescription = series.name,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
                         )
                     }
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
                             text = stringResource(Res.string.series_type_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = TextSecondary,
-                            letterSpacing = androidx.compose.ui.unit.TextUnit(
-                                1.5f, androidx.compose.ui.unit.TextUnitType.Sp
-                            )
+                            letterSpacing =
+                                androidx.compose.ui.unit.TextUnit(
+                                    1.5f,
+                                    androidx.compose.ui.unit.TextUnitType.Sp,
+                                ),
                         )
                         Text(
                             text = series.name,
@@ -212,12 +221,12 @@ private fun DetailContent(
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             text = buildHeroMeta(series.startYear, series.publisher?.name),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            color = TextSecondary,
                         )
                         if (series.countOfIssues != null && series.countOfIssues > 0) {
                             Spacer(modifier = Modifier.height(4.dp))
@@ -238,10 +247,11 @@ private fun DetailContent(
                     color = TextSecondary,
                     maxLines = 8,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(ScreenBackground)
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(ScreenBackground)
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                 )
             }
         }
@@ -251,37 +261,38 @@ private fun DetailContent(
             item {
                 HorizontalDivider(
                     color = Color.White.copy(alpha = 0.12f),
-                    modifier = Modifier.background(ScreenBackground)
+                    modifier = Modifier.background(ScreenBackground),
                 )
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(ScreenBackground)
-                        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(ScreenBackground)
+                            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     Text(
                         text = stringResource(Res.string.creators_label),
                         style = MaterialTheme.typography.titleSmall,
                         color = TextPrimary,
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        modifier = Modifier.padding(bottom = 6.dp),
                     )
                     creators.forEach { creator ->
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 text = creator.name,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = TextPrimary,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
                             )
                             creator.role?.takeIf { it.isNotBlank() }?.let { role ->
                                 Text(
                                     text = role,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary
+                                    color = TextSecondary,
                                 )
                             }
                         }
@@ -294,43 +305,51 @@ private fun DetailContent(
         item {
             HorizontalDivider(
                 color = Color.White.copy(alpha = 0.12f),
-                modifier = Modifier.background(ScreenBackground)
+                modifier = Modifier.background(ScreenBackground),
             )
         }
         item {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(ScreenBackground)
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
             ) {
-                val isLoading = addState == AddCollectionState.Checking ||
+                val isLoading =
+                    addState == AddCollectionState.Checking ||
                         addState == AddCollectionState.Adding ||
                         addState == AddCollectionState.Removing
                 if (addState == AddCollectionState.InCollection) {
                     Button(
                         onClick = onRemoveFromCollection,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFB71C1C),
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFB71C1C),
+                                contentColor = Color.White,
+                            ),
+                        modifier = Modifier.fillMaxWidth(),
                     ) { Text(stringResource(Res.string.remove_from_collection)) }
                 } else {
                     Button(
                         onClick = onAddToCollection,
                         enabled = addState == AddCollectionState.Idle,
-                        colors = if (addState == AddCollectionState.Added) ButtonDefaults.buttonColors(
-                            disabledContainerColor = BadgeGreen,
-                            disabledContentColor = Color.White
-                        ) else ButtonDefaults.buttonColors(),
-                        modifier = Modifier.fillMaxWidth()
+                        colors =
+                            if (addState == AddCollectionState.Added) {
+                                ButtonDefaults.buttonColors(
+                                    disabledContainerColor = BadgeGreen,
+                                    disabledContentColor = Color.White,
+                                )
+                            } else {
+                                ButtonDefaults.buttonColors()
+                            },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.height(16.dp).width(16.dp),
                                 strokeWidth = 2.dp,
-                                color = Color.White
+                                color = Color.White,
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                         }
@@ -338,10 +357,13 @@ private fun DetailContent(
                             when (addState) {
                                 AddCollectionState.Checking,
                                 AddCollectionState.Adding,
-                                AddCollectionState.Removing -> stringResource(Res.string.loading)
+                                AddCollectionState.Removing,
+                                -> stringResource(Res.string.loading)
+
                                 AddCollectionState.Added -> stringResource(Res.string.added_to_collection)
+
                                 else -> stringResource(Res.string.add_to_collection)
-                            }
+                            },
                         )
                     }
                 }
@@ -351,16 +373,17 @@ private fun DetailContent(
         // ── View on ComicVine ─────────────────────────────────────────────
         item {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(ScreenBackground)
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-                    .padding(bottom = 8.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .padding(bottom = 8.dp),
             ) {
                 Button(
                     onClick = onViewOnComicVine,
                     colors = ButtonDefaults.outlinedButtonColors(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(Res.string.view_on_comicvine)) }
             }
         }
@@ -369,65 +392,76 @@ private fun DetailContent(
         item {
             HorizontalDivider(
                 color = Color.White.copy(alpha = 0.12f),
-                modifier = Modifier.background(ScreenBackground)
+                modifier = Modifier.background(ScreenBackground),
             )
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(ScreenBackground)
-                    .padding(start = 16.dp, end = 4.dp, top = 14.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground)
+                        .padding(start = 16.dp, end = 4.dp, top = 14.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = stringResource(Res.string.issues_label),
                     style = MaterialTheme.typography.titleSmall,
                     color = TextPrimary,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 IconButton(onClick = onToggleSort) {
                     Icon(
-                        imageVector = if (sortOrder == IssuesSortOrder.NUMBER_ASC)
-                            Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
-                        contentDescription = if (sortOrder == IssuesSortOrder.NUMBER_ASC)
-                            stringResource(Res.string.sort_descending_cd) else stringResource(Res.string.sort_ascending_cd),
-                        tint = TextSecondary
+                        imageVector =
+                            if (sortOrder == IssuesSortOrder.NUMBER_ASC) {
+                                Icons.Filled.ArrowUpward
+                            } else {
+                                Icons.Filled.ArrowDownward
+                            },
+                        contentDescription =
+                            if (sortOrder == IssuesSortOrder.NUMBER_ASC) {
+                                stringResource(Res.string.sort_descending_cd)
+                            } else {
+                                stringResource(Res.string.sort_ascending_cd)
+                            },
+                        tint = TextSecondary,
                     )
                 }
             }
             LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(ScreenBackground),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground),
                 contentPadding = PaddingValues(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {
                     IssueFilterChip(
                         text = stringResource(Res.string.filter_all),
                         selected = collectionFilter == IssuesCollectionFilter.ALL,
-                        onClick = { onSetFilter(IssuesCollectionFilter.ALL) }
+                        onClick = { onSetFilter(IssuesCollectionFilter.ALL) },
                     )
                 }
                 item {
                     IssueFilterChip(
                         text = stringResource(Res.string.filter_in_collection),
                         selected = collectionFilter == IssuesCollectionFilter.IN_COLLECTION,
-                        onClick = { onSetFilter(IssuesCollectionFilter.IN_COLLECTION) }
+                        onClick = { onSetFilter(IssuesCollectionFilter.IN_COLLECTION) },
                     )
                 }
                 item {
                     IssueFilterChip(
                         text = stringResource(Res.string.filter_not_in_collection),
                         selected = collectionFilter == IssuesCollectionFilter.NOT_IN_COLLECTION,
-                        onClick = { onSetFilter(IssuesCollectionFilter.NOT_IN_COLLECTION) }
+                        onClick = { onSetFilter(IssuesCollectionFilter.NOT_IN_COLLECTION) },
                     )
                 }
             }
             Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .background(ScreenBackground)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .background(ScreenBackground),
             )
         }
 
@@ -435,16 +469,17 @@ private fun DetailContent(
         if (displayedIssues.isEmpty()) {
             item {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .background(ScreenBackground),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .background(ScreenBackground),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = stringResource(Res.string.no_issues_match_filter),
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
+                        color = TextSecondary,
                     )
                 }
             }
@@ -452,18 +487,19 @@ private fun DetailContent(
             val rows = displayedIssues.chunked(3)
             items(rows) { rowIssues ->
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(ScreenBackground)
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(ScreenBackground)
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     rowIssues.forEach { issue ->
                         IssueGridCell(
                             issue = issue,
                             inCollection = issue.id in collectionIssueIds,
                             modifier = Modifier.weight(1f),
-                            onClick = { onIssueClick(issue.id) }
+                            onClick = { onIssueClick(issue.id) },
                         )
                     }
                     repeat(3 - rowIssues.size) { Spacer(modifier = Modifier.weight(1f)) }
@@ -473,31 +509,38 @@ private fun DetailContent(
 
         item {
             Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .background(ScreenBackground)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .background(ScreenBackground),
             )
         }
     }
 }
 
 @Composable
-private fun IssueFilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
+private fun IssueFilterChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
     FilterChip(
         selected = selected,
         onClick = onClick,
         label = { Text(text, style = MaterialTheme.typography.labelSmall) },
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = selected,
-            borderColor = Color.White.copy(alpha = 0.15f),
-            selectedBorderColor = Color.Transparent
-        )
+        colors =
+            FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            ),
+        border =
+            FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selected,
+                borderColor = Color.White.copy(alpha = 0.15f),
+                selectedBorderColor = Color.Transparent,
+            ),
     )
 }
 
@@ -506,62 +549,63 @@ private fun IssueGridCell(
     issue: ComicVineIssueSummary,
     inCollection: Boolean,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .aspectRatio(0.67f)
-            .clickable(onClick = onClick)
+        modifier =
+            modifier
+                .aspectRatio(0.67f)
+                .clickable(onClick = onClick),
     ) {
         Card(
             shape = RoundedCornerShape(6.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
             AsyncImage(
                 model = issue.image?.coverUrl(),
                 contentDescription = "#${issue.issueNumber}",
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
         // Issue number at bottom
         Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(0f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.75f)),
-                    RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp)
-                )
-                .padding(horizontal = 4.dp, vertical = 4.dp),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(0f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.75f)),
+                        RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp),
+                    ).padding(horizontal = 4.dp, vertical = 4.dp),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = "#${issue.issueNumber}",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
         }
         // IN COLLECTION banner at top
         if (inCollection) {
             Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .background(
-                        BadgeGreen.copy(alpha = 0.9f),
-                        RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
-                    )
-                    .padding(vertical = 3.dp),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .background(
+                            BadgeGreen.copy(alpha = 0.9f),
+                            RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp),
+                        ).padding(vertical = 3.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = stringResource(Res.string.in_collection_badge),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             }
         }
@@ -571,10 +615,11 @@ private fun IssueGridCell(
 @Composable
 private fun IssueBadge(count: Int) {
     Box(
-        modifier = Modifier
-            .background(BadgeGreen, RoundedCornerShape(6.dp))
-            .padding(horizontal = 10.dp, vertical = 3.dp),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .background(BadgeGreen, RoundedCornerShape(6.dp))
+                .padding(horizontal = 10.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = "$count", color = Color.White, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -584,11 +629,17 @@ private fun IssueBadge(count: Int) {
 }
 
 @Composable
-private fun TopBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
+private fun TopBackButton(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     PlatformBackButton(onBack = onBack, modifier = modifier, overlaid = true)
 }
 
-private fun buildHeroMeta(startYear: String?, publisher: String?): String =
+private fun buildHeroMeta(
+    startYear: String?,
+    publisher: String?,
+): String =
     buildString {
         startYear?.let { append(it) }
         publisher?.let {

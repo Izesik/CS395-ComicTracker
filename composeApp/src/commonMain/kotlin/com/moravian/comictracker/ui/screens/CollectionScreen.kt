@@ -63,21 +63,26 @@ private val TextMuted = Color(0xFF777777)
 
 /** Displays the user's saved comic series collection with sort and layout controls. */
 @Composable
-fun CollectionScreen(viewModel: CollectionViewModel, onSeriesClick: (Int) -> Unit = {}) {
+fun CollectionScreen(
+    viewModel: CollectionViewModel,
+    onSeriesClick: (Int) -> Unit = {},
+) {
     val series by viewModel.series.collectAsStateWithLifecycle()
     val layout by viewModel.collectionLayout.collectAsStateWithLifecycle()
     val sort by viewModel.collectionSort.collectAsStateWithLifecycle()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(CollectionBackground)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(CollectionBackground),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 8.dp, top = 20.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 8.dp, top = 20.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = stringResource(Res.string.shelf_label),
@@ -85,20 +90,34 @@ fun CollectionScreen(viewModel: CollectionViewModel, onSeriesClick: (Int) -> Uni
                 fontWeight = FontWeight.ExtraBold,
                 color = TextPrimary,
                 letterSpacing = (-0.5).sp,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             IconButton(onClick = viewModel::toggleSort) {
                 Icon(
                     imageVector = Icons.Filled.SwapVert,
-                    contentDescription = if (sort == CollectionSort.TITLE) stringResource(Res.string.sorted_by_title) else stringResource(Res.string.sorted_by_date_added),
-                    tint = if (sort == CollectionSort.DATE_ADDED) TextPrimary else TextMuted
+                    contentDescription =
+                        if (sort ==
+                            CollectionSort.TITLE
+                        ) {
+                            stringResource(Res.string.sorted_by_title)
+                        } else {
+                            stringResource(Res.string.sorted_by_date_added)
+                        },
+                    tint = if (sort == CollectionSort.DATE_ADDED) TextPrimary else TextMuted,
                 )
             }
             IconButton(onClick = viewModel::toggleLayout) {
                 Icon(
                     imageVector = if (layout == CollectionLayout.GRID) Icons.Filled.ViewList else Icons.Filled.GridView,
-                    contentDescription = if (layout == CollectionLayout.GRID) stringResource(Res.string.switch_to_list_view) else stringResource(Res.string.switch_to_grid_view),
-                    tint = TextMuted
+                    contentDescription =
+                        if (layout ==
+                            CollectionLayout.GRID
+                        ) {
+                            stringResource(Res.string.switch_to_list_view)
+                        } else {
+                            stringResource(Res.string.switch_to_grid_view)
+                        },
+                    tint = TextMuted,
                 )
             }
         }
@@ -115,24 +134,30 @@ fun CollectionScreen(viewModel: CollectionViewModel, onSeriesClick: (Int) -> Uni
 }
 
 @Composable
-private fun GridShelf(series: List<SeriesEntity>, onSeriesClick: (Int) -> Unit) {
+private fun GridShelf(
+    series: List<SeriesEntity>,
+    onSeriesClick: (Int) -> Unit,
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
     ) {
         items(series) { s -> SeriesCard(s, onSeriesClick) }
     }
 }
 
 @Composable
-private fun ListShelf(series: List<SeriesEntity>, onSeriesClick: (Int) -> Unit) {
+private fun ListShelf(
+    series: List<SeriesEntity>,
+    onSeriesClick: (Int) -> Unit,
+) {
     LazyColumn(
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
     ) {
         items(series) { s -> SeriesListRow(s, onSeriesClick) }
     }
@@ -146,40 +171,44 @@ private fun EmptyShelf() {
                 imageVector = Icons.Filled.MenuBook,
                 contentDescription = null,
                 tint = TextMuted,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp),
             )
             Text(
                 text = stringResource(Res.string.no_comics_on_shelf),
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextMuted
+                color = TextMuted,
             )
         }
     }
 }
 
 @Composable
-private fun SeriesCard(series: SeriesEntity, onSeriesClick: (Int) -> Unit) {
+private fun SeriesCard(
+    series: SeriesEntity,
+    onSeriesClick: (Int) -> Unit,
+) {
     Column(modifier = Modifier.fillMaxWidth().clickable { onSeriesClick(series.comicvineId) }) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.67f)
-                .clip(RoundedCornerShape(6.dp))
-                .background(CardBackground),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.67f)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(CardBackground),
+            contentAlignment = Alignment.Center,
         ) {
             if (series.coverImageUrl != null) {
                 AsyncImage(
                     model = series.coverImageUrl,
                     contentDescription = series.title,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 )
             } else {
                 Icon(
                     imageVector = Icons.Filled.MenuBook,
                     contentDescription = null,
-                    tint = TextMuted
+                    tint = TextMuted,
                 )
             }
         }
@@ -189,50 +218,55 @@ private fun SeriesCard(series: SeriesEntity, onSeriesClick: (Int) -> Unit) {
             style = MaterialTheme.typography.labelMedium,
             color = TextPrimary,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
         )
         if (series.publisher != null) {
             Text(
                 text = series.publisher,
                 style = MaterialTheme.typography.labelSmall,
                 color = TextMuted,
-                maxLines = 1
+                maxLines = 1,
             )
         }
     }
 }
 
 @Composable
-private fun SeriesListRow(series: SeriesEntity, onSeriesClick: (Int) -> Unit) {
+private fun SeriesListRow(
+    series: SeriesEntity,
+    onSeriesClick: (Int) -> Unit,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onSeriesClick(series.comicvineId) }
-            .background(CardBackground, RoundedCornerShape(8.dp))
-            .padding(10.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onSeriesClick(series.comicvineId) }
+                .background(CardBackground, RoundedCornerShape(8.dp))
+                .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            modifier = Modifier
-                .size(width = 50.dp, height = 70.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(Color(0xFF2A2A2A)),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(width = 50.dp, height = 70.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF2A2A2A)),
+            contentAlignment = Alignment.Center,
         ) {
             if (series.coverImageUrl != null) {
                 AsyncImage(
                     model = series.coverImageUrl,
                     contentDescription = series.title,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 )
             } else {
                 Icon(
                     imageVector = Icons.Filled.MenuBook,
                     contentDescription = null,
                     tint = TextMuted,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
                 )
             }
         }
@@ -243,7 +277,7 @@ private fun SeriesListRow(series: SeriesEntity, onSeriesClick: (Int) -> Unit) {
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
             if (series.publisher != null) {
                 Spacer(modifier = Modifier.height(2.dp))
@@ -251,7 +285,7 @@ private fun SeriesListRow(series: SeriesEntity, onSeriesClick: (Int) -> Unit) {
                     text = series.publisher,
                     style = MaterialTheme.typography.bodySmall,
                     color = TextMuted,
-                    maxLines = 1
+                    maxLines = 1,
                 )
             }
         }

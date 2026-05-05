@@ -8,7 +8,10 @@ import platform.Foundation.NSURLRequest
 import platform.WebKit.WKWebView
 
 @Composable
-actual fun PlatformWebView(url: String, modifier: Modifier) {
+actual fun PlatformWebView(
+    url: String,
+    modifier: Modifier,
+) {
     UIKitView(
         factory = {
             WKWebView().apply {
@@ -18,6 +21,6 @@ actual fun PlatformWebView(url: String, modifier: Modifier) {
         update = { webView ->
             NSURL.URLWithString(url)?.let { webView.loadRequest(NSURLRequest(it)) }
         },
-        modifier = modifier
+        modifier = modifier,
     )
 }

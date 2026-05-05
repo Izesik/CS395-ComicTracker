@@ -2,15 +2,17 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
-val localProps = Properties().apply {
-    load(rootProject.file("local.properties").inputStream())
-}
+val localProps =
+    Properties().apply {
+        load(rootProject.file("local.properties").inputStream())
+    }
 
 val metronUsername: String = localProps.getProperty("METRON_USERNAME") ?: ""
 val metronPassword: String = localProps.getProperty("METRON_PASSWORD") ?: ""
-val comicVineApiKey: String = localProps.getProperty("COMICVINE_API_KEY")
-    ?: localProps.getProperty("API_KEY")
-    ?: ""
+val comicVineApiKey: String =
+    localProps.getProperty("COMICVINE_API_KEY")
+        ?: localProps.getProperty("API_KEY")
+        ?: ""
 
 // Claude wrote this, I couldn't figure out how to do secrets correctly so ggs
 val generateApiConfig by tasks.registering {
@@ -27,11 +29,11 @@ val generateApiConfig by tasks.registering {
         metronFile.parentFile.mkdirs()
         metronFile.writeText(
             "package com.moravian.comictracker.network\n\n" +
-            "internal object MetronConfig {\n" +
-            "    const val USERNAME = \"$mUser\"\n" +
-            "    const val PASSWORD = \"$mPass\"\n" +
-            "    const val COMICVINE_API_KEY = \"$cvKey\"\n" +
-            "}\n"
+                "internal object MetronConfig {\n" +
+                "    const val USERNAME = \"$mUser\"\n" +
+                "    const val PASSWORD = \"$mPass\"\n" +
+                "    const val COMICVINE_API_KEY = \"$cvKey\"\n" +
+                "}\n",
         )
     }
 }
@@ -52,17 +54,17 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     listOf(
         iosArm64(),
-        iosSimulatorArm64()
+        iosSimulatorArm64(),
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
         }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
@@ -119,13 +121,22 @@ dependencies {
 
 android {
     namespace = "com.moravian.comictracker"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.android.compileSdk
+            .get()
+            .toInt()
     buildFeatures { buildConfig = true }
 
     defaultConfig {
         applicationId = "com.moravian.comictracker"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
+        targetSdk =
+            libs.versions.android.targetSdk
+                .get()
+                .toInt()
         versionCode = 1
         versionName = "1.0"
     }

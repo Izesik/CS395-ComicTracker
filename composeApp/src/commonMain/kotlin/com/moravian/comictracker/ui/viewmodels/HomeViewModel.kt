@@ -17,20 +17,30 @@ import kotlinx.coroutines.launch
 enum class HomeTab {
     /** Shows a curated list of recently updated comic series. */
     Series,
+
     /** Shows recent issues from home-safe series. */
-    Issues
+    Issues,
 }
 
 /** Possible UI states for the home screen content area. */
 sealed class HomeUiState {
     /** Data is being fetched from the API. */
     data object Loading : HomeUiState()
+
     /** Series data loaded successfully. */
-    data class SeriesSuccess(val series: List<ComicVineVolume>) : HomeUiState()
+    data class SeriesSuccess(
+        val series: List<ComicVineVolume>,
+    ) : HomeUiState()
+
     /** Issues data loaded successfully. */
-    data class IssuesSuccess(val issues: List<ComicVineIssueSummary>) : HomeUiState()
+    data class IssuesSuccess(
+        val issues: List<ComicVineIssueSummary>,
+    ) : HomeUiState()
+
     /** A network or API error occurred; [message] is suitable for display. */
-    data class Error(val message: String) : HomeUiState()
+    data class Error(
+        val message: String,
+    ) : HomeUiState()
 }
 
 /**
@@ -39,14 +49,18 @@ sealed class HomeUiState {
  * Loads and caches series and issues from ComicVine, and persists the last-selected tab
  * so the same content is shown on next launch.
  */
-class HomeViewModel(private val prefsRepository: UserPreferencesRepository) : ViewModel() {
+class HomeViewModel(
+    private val prefsRepository: UserPreferencesRepository,
+) : ViewModel() {
     private val comicVine = ComicVineApi()
 
     private val _selectedTab = MutableStateFlow(HomeTab.Series)
+
     /** The currently active home tab. */
     val selectedTab: StateFlow<HomeTab> = _selectedTab.asStateFlow()
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+
     /** Current UI state for the home content area. */
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -85,9 +99,10 @@ class HomeViewModel(private val prefsRepository: UserPreferencesRepository) : Vi
                 cachedSeries = series
                 _uiState.value = HomeUiState.SeriesSuccess(series)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(
-                    e.toUserFacingNetworkMessage("ComicVine", "Failed to load series")
-                )
+                _uiState.value =
+                    HomeUiState.Error(
+                        e.toUserFacingNetworkMessage("ComicVine", "Failed to load series"),
+                    )
             }
         }
     }
@@ -100,9 +115,10 @@ class HomeViewModel(private val prefsRepository: UserPreferencesRepository) : Vi
                 cachedIssues = issues
                 _uiState.value = HomeUiState.IssuesSuccess(issues)
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(
-                    e.toUserFacingNetworkMessage("ComicVine", "Failed to load issues")
-                )
+                _uiState.value =
+                    HomeUiState.Error(
+                        e.toUserFacingNetworkMessage("ComicVine", "Failed to load issues"),
+                    )
             }
         }
     }
