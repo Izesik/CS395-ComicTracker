@@ -19,12 +19,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
+/** Possible UI states for the issue detail screen. */
 sealed class IssueDetailUiState {
+    /** Issue data is being loaded from the API. */
     data object Loading : IssueDetailUiState()
+    /** Issue loaded successfully. */
     data class Success(val issue: ComicVineIssue) : IssueDetailUiState()
+    /** A network or API error occurred; [message] is suitable for display. */
     data class Error(val message: String) : IssueDetailUiState()
 }
 
+/**
+ * ViewModel for the Issue Detail screen.
+ *
+ * Fetches full issue data from ComicVine and manages add/remove collection operations,
+ * including creating a parent series row if none exists locally yet.
+ */
 class IssueDetailViewModel(
     private val issueId: Int,
     private val dao: ComicDao
@@ -32,9 +42,11 @@ class IssueDetailViewModel(
     private val api = ComicVineApi()
 
     private val _uiState = MutableStateFlow<IssueDetailUiState>(IssueDetailUiState.Loading)
+    /** Current state of the issue detail content area. */
     val uiState: StateFlow<IssueDetailUiState> = _uiState.asStateFlow()
 
     private val _addState = MutableStateFlow<AddCollectionState>(AddCollectionState.Checking)
+    /** Current state of the add/remove collection button. */
     val addState: StateFlow<AddCollectionState> = _addState.asStateFlow()
 
     init {
@@ -63,6 +75,7 @@ class IssueDetailViewModel(
         }
     }
 
+    /** Removes this issue from the local collection. */
     fun removeFromCollection() {
         viewModelScope.launch {
             _addState.value = AddCollectionState.Removing
@@ -72,6 +85,11 @@ class IssueDetailViewModel(
         }
     }
 
+    /**
+     * Saves this issue to the local collection, creating a parent series row if needed.
+     *
+     * Creator credits are also persisted for each person listed in the issue's credits.
+     */
     fun addToCollection() {
         val issue = (uiState.value as? IssueDetailUiState.Success)?.issue ?: return
         viewModelScope.launch {
@@ -120,6 +138,7 @@ class IssueDetailViewModel(
     }
 
     companion object {
+        /** Creates a factory that injects [issueId] and [database]. */
         fun factory(issueId: Int, database: ComicTrackerDatabase): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")

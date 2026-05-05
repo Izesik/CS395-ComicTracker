@@ -19,6 +19,7 @@ import com.moravian.comictracker.ui.components.PlatformBackButton
 private val WebViewBackground = Color(0xFF121212)
 private val WebViewTextPrimary = Color.White
 
+/** Full-screen WebView for browsing a ComicVine series or issue page in-app. */
 @Composable
 fun ComicWebViewScreen(url: String, title: String, onBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().background(WebViewBackground)) {

@@ -52,6 +52,7 @@ private val TextPrimary = Color.White
 private val TextMuted = Color(0xFF777777)
 private val AccentAmber = Color(0xFFFFB300)
 
+/** Home feed showing curated series and recent issues in a tabbed grid layout. */
 @Composable
 fun HomeScreen(
     onVolumeClick: (Int) -> Unit = {},

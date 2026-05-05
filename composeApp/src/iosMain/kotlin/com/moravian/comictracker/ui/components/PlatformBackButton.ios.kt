@@ -18,7 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import comictracker.composeapp.generated.resources.Res
+import comictracker.composeapp.generated.resources.back_cd
+import org.jetbrains.compose.resources.stringResource
 
+/** iOS back button styled as a native chevron + "Back" text label. */
 @Composable
 actual fun PlatformBackButton(
     onBack: () -> Unit,
@@ -45,7 +49,7 @@ actual fun PlatformBackButton(
         )
         Spacer(Modifier.width(2.dp))
         Text(
-            text = "Back",
+            text = stringResource(Res.string.back_cd),
             color = Color.White,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.SemiBold

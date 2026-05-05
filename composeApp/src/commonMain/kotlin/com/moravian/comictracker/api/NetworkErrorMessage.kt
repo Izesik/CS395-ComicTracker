@@ -1,5 +1,15 @@
 package com.moravian.comictracker.network
 
+/**
+ * Converts a network [Throwable] into a user-facing error message.
+ *
+ * Detects common failure modes (missing API key, DNS failure, timeout) and
+ * returns a plain-English string. Falls back to the raw exception message or
+ * [fallback] if no known pattern is matched.
+ *
+ * @param serviceName Display name of the service that failed (e.g. "ComicVine").
+ * @param fallback Message to use when no specific error pattern is recognised.
+ */
 fun Throwable.toUserFacingNetworkMessage(serviceName: String, fallback: String): String {
     val details = messageChain().lowercase()
     return when {
@@ -16,6 +26,7 @@ fun Throwable.toUserFacingNetworkMessage(serviceName: String, fallback: String):
     }
 }
 
+/** Collects the messages from this throwable and all its causes into a single string. */
 private fun Throwable.messageChain(): String {
     val messages = mutableListOf<String>()
     var current: Throwable? = this

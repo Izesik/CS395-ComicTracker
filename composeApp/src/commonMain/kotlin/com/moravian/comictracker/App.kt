@@ -63,6 +63,13 @@ sealed class Screen(val route: String) {
 
 private val hideBottomBarPrefixes = listOf("comic_detail", "issue_detail", "webview", "barcode_scan")
 
+/**
+ * Root composable for the app.
+ *
+ * Sets up the [NavHost] with all destinations, the bottom navigation bar,
+ * and the barcode scan FAB. Receives shared [database] and [prefsRepository]
+ * instances from [MainActivity] and passes them to screens that need them.
+ */
 @Composable
 fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesRepository) {
     ComicTrackerTheme {

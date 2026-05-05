@@ -26,12 +26,22 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
+/** Possible UI states for the series detail screen. */
 sealed class ComicDetailUiState {
+    /** Series data is being loaded from the API. */
     data object Loading : ComicDetailUiState()
+    /** Series loaded successfully. */
     data class Success(val series: ComicVineVolume) : ComicDetailUiState()
+    /** A network or API error occurred; [message] is suitable for display. */
     data class Error(val message: String) : ComicDetailUiState()
 }
 
+/**
+ * ViewModel for the Comic Detail screen.
+ *
+ * Loads series and issue data from ComicVine, observes local collection state from Room,
+ * and exposes a filtered and sorted [displayedIssues] list driven by persisted preferences.
+ */
 class ComicDetailViewModel(
     private val seriesId: Int,
     private val dao: ComicDao,
@@ -40,25 +50,32 @@ class ComicDetailViewModel(
     private val api = ComicVineApi()
 
     private val _uiState = MutableStateFlow<ComicDetailUiState>(ComicDetailUiState.Loading)
+    /** Current state of the series detail content area. */
     val uiState: StateFlow<ComicDetailUiState> = _uiState.asStateFlow()
 
     private val _addState = MutableStateFlow<AddCollectionState>(AddCollectionState.Checking)
+    /** Current state of the add/remove collection button. */
     val addState: StateFlow<AddCollectionState> = _addState.asStateFlow()
 
     private val _allIssues = MutableStateFlow<List<ComicVineIssueSummary>>(emptyList())
 
     private val _collectionIssueIds = MutableStateFlow<Set<Int>>(emptySet())
+    /** Set of ComicVine issue IDs the user has saved locally, used to show "IN COLLECTION" badges. */
     val collectionIssueIds: StateFlow<Set<Int>> = _collectionIssueIds.asStateFlow()
 
     private val _seriesCreators = MutableStateFlow<List<CreatorEntity>>(emptyList())
+    /** Deduplicated creator credits for the series, loaded from local storage. */
     val seriesCreators: StateFlow<List<CreatorEntity>> = _seriesCreators.asStateFlow()
 
+    /** Persisted sort order for the issues list. */
     val issuesSortOrder: StateFlow<IssuesSortOrder> = prefsRepository.issuesSortOrder
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), IssuesSortOrder.NUMBER_ASC)
 
+    /** Persisted collection filter for the issues list. */
     val issuesCollectionFilter: StateFlow<IssuesCollectionFilter> = prefsRepository.issuesCollectionFilter
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), IssuesCollectionFilter.ALL)
 
+    /** Issues filtered by [issuesCollectionFilter] and sorted by [issuesSortOrder]. */
     val displayedIssues: StateFlow<List<ComicVineIssueSummary>> = combine(
         _allIssues, _collectionIssueIds, issuesSortOrder, issuesCollectionFilter
     ) { issues, collectionIds, sort, filter ->
@@ -129,6 +146,7 @@ class ComicDetailViewModel(
         }
     }
 
+    /** Toggles the issue sort order between ascending and descending and persists the choice. */
     fun toggleSortOrder() {
         viewModelScope.launch {
             val next = if (issuesSortOrder.value == IssuesSortOrder.NUMBER_ASC)
@@ -137,10 +155,12 @@ class ComicDetailViewModel(
         }
     }
 
+    /** Sets the active collection [filter] for the issues list and persists it. */
     fun setCollectionFilter(filter: IssuesCollectionFilter) {
         viewModelScope.launch { prefsRepository.setIssuesCollectionFilter(filter) }
     }
 
+    /** Saves the current series and all its issues to the local collection. */
     fun addToCollection() {
         val series = (uiState.value as? ComicDetailUiState.Success)?.series ?: return
         viewModelScope.launch {
@@ -158,6 +178,7 @@ class ComicDetailViewModel(
         }
     }
 
+    /** Removes the current series and all its issues from the local collection. */
     fun removeFromCollection() {
         viewModelScope.launch {
             _addState.value = AddCollectionState.Removing
@@ -172,6 +193,7 @@ class ComicDetailViewModel(
     }
 
     companion object {
+        /** Creates a factory that injects [seriesId], [database], and [prefsRepository]. */
         fun factory(
             seriesId: Int,
             database: ComicTrackerDatabase,

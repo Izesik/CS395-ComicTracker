@@ -20,6 +20,9 @@ private const val HOME_SERIES_MAX_PAGES = 5
 private const val HOME_ISSUE_VOLUME_COUNT = 18
 private const val HOME_ISSUES_PER_VOLUME = 2
 
+// Home feed content filtering: You'd think ComicVine would have a "mature content" flag or something, but ggs
+
+/** Publishers whose content is suitable for the home feed. */
 private val HOME_SAFE_PUBLISHERS = setOf(
     "archie comics",
     "boom! studios",
@@ -37,6 +40,7 @@ private val HOME_SAFE_PUBLISHERS = setOf(
     "viz media"
 )
 
+/** Title terms that indicate content not suitable for the home feed. */
 private val HOME_BLOCKED_TITLE_TERMS = listOf(
     "adult",
     "after dark",
@@ -69,9 +73,21 @@ private val HOME_BLOCKED_TITLE_TERMS = listOf(
     "zombie tramp"
 )
 
+/**
+ * Client for the ComicVine REST API.
+ *
+ * All requests include the API key from build configuration and request
+ * only the fields needed for each use case to minimise payload size.
+ */
 class ComicVineApi {
     private val client: HttpClient = createJsonClient()
 
+    /**
+     * Searches for series (volumes) matching [query].
+     *
+     * @param limit Maximum number of results to return.
+     * @return List of matching [ComicVineVolume] results.
+     */
     suspend fun searchVolumes(query: String, limit: Int = 20): List<ComicVineVolume> {
         val response = client.get("$COMICVINE_BASE_URL/search/") {
             comicVineParameters()
@@ -84,10 +100,22 @@ class ComicVineApi {
         return response.body<ComicVinePagedResponse<ComicVineVolume>>().results
     }
 
+    /**
+     * Returns a curated list of recently updated, home-safe series.
+     *
+     * @param limit Maximum number of series to return.
+     * @return Filtered list of [ComicVineVolume] results suitable for the home feed.
+     */
     suspend fun getPopularSeries(limit: Int = 12): List<ComicVineVolume> {
         return getHomeSafeSeries(limit, HOME_SERIES_MAX_PAGES)
     }
 
+    /**
+     * Returns recent issues from home-safe series, sorted by cover date descending.
+     *
+     * @param limit Maximum number of issues to return.
+     * @return Filtered and sorted list of [ComicVineIssueSummary].
+     */
     suspend fun getRecentIssues(limit: Int = 30): List<ComicVineIssueSummary> {
         return getHomeSafeSeries(HOME_ISSUE_VOLUME_COUNT, HOME_SERIES_MAX_PAGES)
             .flatMap { series -> getRecentIssuesByVolume(series.id, HOME_ISSUES_PER_VOLUME) }
@@ -96,6 +124,11 @@ class ComicVineApi {
             .take(limit)
     }
 
+    /**
+     * Fetches the full detail for a single series by its ComicVine [id].
+     *
+     * @return The matching [ComicVineVolume] with description and creator fields populated.
+     */
     suspend fun getVolume(id: Int): ComicVineVolume {
         val response = client.get("$COMICVINE_BASE_URL/volume/4050-$id/") {
             comicVineParameters()
@@ -105,6 +138,11 @@ class ComicVineApi {
         return response.body<ComicVineSingleResponse<ComicVineVolume>>().results
     }
 
+    /**
+     * Returns up to [limit] issues belonging to the series with ComicVine [volumeId].
+     *
+     * @return Issues sorted by issue number ascending.
+     */
     suspend fun getIssuesByVolume(volumeId: Int, limit: Int = 100): List<ComicVineIssueSummary> {
         val response = client.get("$COMICVINE_BASE_URL/issues/") {
             comicVineParameters()
@@ -117,6 +155,11 @@ class ComicVineApi {
         return response.body<ComicVinePagedResponse<ComicVineIssueSummary>>().results
     }
 
+    /**
+     * Fetches the full detail for a single issue by its ComicVine [id].
+     *
+     * @return The matching [ComicVineIssue] with credits and characters populated.
+     */
     suspend fun getIssue(id: Int): ComicVineIssue {
         val response = client.get("$COMICVINE_BASE_URL/issue/4000-$id/") {
             comicVineParameters()
@@ -170,9 +213,13 @@ class ComicVineApi {
     }
 
     private companion object {
+        /** Minimal fields requested for series list and search endpoints. */
         const val VOLUME_LIST_FIELDS = "id,name,publisher,start_year,image,count_of_issues"
+        /** Full fields requested for the series detail endpoint. */
         const val VOLUME_DETAIL_FIELDS = "id,name,publisher,start_year,image,description,count_of_issues"
+        /** Minimal fields requested for issue list endpoints. */
         const val ISSUE_LIST_FIELDS = "id,volume,issue_number,cover_date,image"
+        /** Full fields requested for the issue detail endpoint. */
         const val ISSUE_DETAIL_FIELDS =
             "id,volume,issue_number,cover_date,store_date,image,description,person_credits,character_credits"
     }
@@ -195,6 +242,12 @@ private fun isHomeSafeIssue(issue: ComicVineIssueSummary): Boolean {
 
 private fun String.normalizedHomeFeedText(): String = lowercase().trim()
 
+/**
+ * Client for the Metron REST API, used for UPC barcode lookups.
+ *
+ * Requires HTTP Basic Auth credentials from build configuration.
+ * Barcode results include a ComicVine ID that is used to open the issue detail screen.
+ */
 class MetronApi {
     private val client: HttpClient = createJsonClient {
         install(Auth) {
@@ -210,6 +263,11 @@ class MetronApi {
         }
     }
 
+    /**
+     * Searches for issues matching the given [upc] barcode string.
+     *
+     * @return Paged response containing zero or more [MetronIssueSummary] results.
+     */
     suspend fun searchByUpc(upc: String): MetronPagedResponse<MetronIssueSummary> {
         AppLog.d(TAG, "GET $METRON_BASE_URL/issue/?upc=$upc")
         val response = client.get("$METRON_BASE_URL/issue/") {
@@ -228,6 +286,13 @@ class MetronApi {
         return body
     }
 
+    /**
+     * Fetches the full detail for a Metron issue by its internal [id].
+     *
+     * Used when a UPC search result does not yet include a ComicVine ID.
+     *
+     * @return The matching [MetronIssue] which includes the ComicVine cross-reference ID.
+     */
     suspend fun getIssue(id: Int): MetronIssue {
         AppLog.d(TAG, "GET $METRON_BASE_URL/issue/$id/")
         val response = client.get("$METRON_BASE_URL/issue/$id/")
@@ -243,10 +308,14 @@ class MetronApi {
     }
 }
 
+/** Wrapper for single-object ComicVine API responses (as opposed to paged list responses). */
 @kotlinx.serialization.Serializable
 data class ComicVineSingleResponse<T>(
+    /** ComicVine API status message. */
     val error: String = "",
+    /** The single result object. */
     val results: T,
+    /** ComicVine numeric status code (1 = OK). */
     @kotlinx.serialization.SerialName("status_code") val statusCode: Int = 0
 )
 

@@ -13,22 +13,41 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-enum class HomeTab { Series, Issues }
+/** Tabs available on the home screen. */
+enum class HomeTab {
+    /** Shows a curated list of recently updated comic series. */
+    Series,
+    /** Shows recent issues from home-safe series. */
+    Issues
+}
 
+/** Possible UI states for the home screen content area. */
 sealed class HomeUiState {
+    /** Data is being fetched from the API. */
     data object Loading : HomeUiState()
+    /** Series data loaded successfully. */
     data class SeriesSuccess(val series: List<ComicVineVolume>) : HomeUiState()
+    /** Issues data loaded successfully. */
     data class IssuesSuccess(val issues: List<ComicVineIssueSummary>) : HomeUiState()
+    /** A network or API error occurred; [message] is suitable for display. */
     data class Error(val message: String) : HomeUiState()
 }
 
+/**
+ * ViewModel for the Home screen.
+ *
+ * Loads and caches series and issues from ComicVine, and persists the last-selected tab
+ * so the same content is shown on next launch.
+ */
 class HomeViewModel(private val prefsRepository: UserPreferencesRepository) : ViewModel() {
     private val comicVine = ComicVineApi()
 
     private val _selectedTab = MutableStateFlow(HomeTab.Series)
+    /** The currently active home tab. */
     val selectedTab: StateFlow<HomeTab> = _selectedTab.asStateFlow()
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+    /** Current UI state for the home content area. */
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private var cachedSeries: List<ComicVineVolume>? = null
@@ -43,6 +62,7 @@ class HomeViewModel(private val prefsRepository: UserPreferencesRepository) : Vi
         }
     }
 
+    /** Switches the active tab and loads data for it, using the cache when available. */
     fun selectTab(tab: HomeTab) {
         if (_selectedTab.value == tab) return
         _selectedTab.value = tab

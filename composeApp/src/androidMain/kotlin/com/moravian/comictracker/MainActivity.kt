@@ -14,6 +14,13 @@ import com.moravian.comictracker.data.UserPreferencesRepository
 import com.moravian.comictracker.data.getComicTrackerDatabase
 import okio.Path.Companion.toPath
 
+/**
+ * Single Activity that hosts the entire Compose UI tree.
+ *
+ * Constructs the shared [ComicTrackerDatabase] and [UserPreferencesRepository] instances
+ * and passes them into [App]. Configuration changes listed in the manifest are handled
+ * internally without recreating this Activity.
+ */
 class MainActivity : ComponentActivity() {
     private val prefsDataStore by lazy {
         PreferenceDataStoreFactory.createWithPath {
@@ -36,6 +43,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** Creates a Room [RoomDatabase.Builder] for [ComicTrackerDatabase] using the app's files directory. */
 fun getDatabaseBuilder(context: Context): RoomDatabase.Builder<ComicTrackerDatabase> {
     val appContext = context.applicationContext
     val dbFile = appContext.getDatabasePath("comictracker.db")

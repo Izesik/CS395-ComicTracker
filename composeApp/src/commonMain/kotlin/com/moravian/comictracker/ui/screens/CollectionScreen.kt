@@ -61,6 +61,7 @@ private val CardBackground = Color(0xFF1A1A1A)
 private val TextPrimary = Color.White
 private val TextMuted = Color(0xFF777777)
 
+/** Displays the user's saved comic series collection with sort and layout controls. */
 @Composable
 fun CollectionScreen(viewModel: CollectionViewModel, onSeriesClick: (Int) -> Unit = {}) {
     val series by viewModel.series.collectAsStateWithLifecycle()

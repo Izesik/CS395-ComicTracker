@@ -17,6 +17,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
+/**
+ * ViewModel for the Collection screen.
+ *
+ * Combines the raw series list from [ComicDao] with the user's sort and layout preferences
+ * to produce a sorted, reactive [series] flow for the UI.
+ */
 class CollectionViewModel(
     dao: ComicDao,
     private val prefsRepository: UserPreferencesRepository
@@ -25,12 +31,15 @@ class CollectionViewModel(
     private val rawSeries: StateFlow<List<SeriesEntity>> = dao.getAllSeries()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** Current layout preference (grid or list) for the collection. */
     val collectionLayout: StateFlow<CollectionLayout> = prefsRepository.collectionLayout
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CollectionLayout.GRID)
 
+    /** Current sort preference for the collection. */
     val collectionSort: StateFlow<CollectionSort> = prefsRepository.collectionSort
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CollectionSort.TITLE)
 
+    /** Sorted series list derived from the database and the active [collectionSort] preference. */
     val series: StateFlow<List<SeriesEntity>> = combine(rawSeries, collectionSort) { list, sort ->
         when (sort) {
             CollectionSort.TITLE -> list.sortedBy { it.title.lowercase() }
@@ -38,6 +47,7 @@ class CollectionViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** Toggles the collection layout between grid and list and persists the choice. */
     fun toggleLayout() {
         viewModelScope.launch {
             val next = if (collectionLayout.value == CollectionLayout.GRID) CollectionLayout.LIST else CollectionLayout.GRID
@@ -45,6 +55,7 @@ class CollectionViewModel(
         }
     }
 
+    /** Toggles the collection sort between title and date-added and persists the choice. */
     fun toggleSort() {
         viewModelScope.launch {
             val next = if (collectionSort.value == CollectionSort.TITLE) CollectionSort.DATE_ADDED else CollectionSort.TITLE
@@ -53,6 +64,7 @@ class CollectionViewModel(
     }
 
     companion object {
+        /** Creates a factory that injects [database] and [prefsRepository]. */
         fun factory(database: ComicTrackerDatabase, prefsRepository: UserPreferencesRepository): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
