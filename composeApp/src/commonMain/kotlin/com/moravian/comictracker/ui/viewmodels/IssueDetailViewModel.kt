@@ -62,6 +62,15 @@ class IssueDetailViewModel(
         }
     }
 
+    fun removeFromCollection() {
+        viewModelScope.launch {
+            _addState.value = AddCollectionState.Removing
+            val existing = dao.getIssueByComicVineId(issueId)
+            if (existing != null) dao.deleteComicIssue(existing.id)
+            _addState.value = AddCollectionState.Idle
+        }
+    }
+
     fun addToCollection() {
         val issue = (uiState.value as? IssueDetailUiState.Success)?.issue ?: return
         viewModelScope.launch {

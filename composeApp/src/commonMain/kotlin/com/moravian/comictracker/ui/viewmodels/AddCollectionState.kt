@@ -6,4 +6,5 @@ sealed class AddCollectionState {
     data object Adding : AddCollectionState()
     data object Added : AddCollectionState()
     data object InCollection : AddCollectionState()
+    data object Removing : AddCollectionState()
 }

@@ -91,6 +91,7 @@ fun IssueDetailScreen(
                 onBack = onBack,
                 addState = addState,
                 onAddToCollection = { viewModel.addToCollection() },
+                onRemoveFromCollection = { viewModel.removeFromCollection() },
                 onViewOnComicVine = onViewOnComicVine
             )
         }
@@ -103,6 +104,7 @@ private fun IssueDetailContent(
     onBack: () -> Unit,
     addState: AddCollectionState,
     onAddToCollection: () -> Unit,
+    onRemoveFromCollection: () -> Unit,
     onViewOnComicVine: () -> Unit
 ) {
     val imageUrl = issue.image?.coverUrl()
@@ -298,35 +300,46 @@ private fun IssueDetailContent(
                     .background(ScreenBackground)
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                val inCollection = addState == AddCollectionState.InCollection || addState == AddCollectionState.Added
-                val isLoading = addState == AddCollectionState.Checking || addState == AddCollectionState.Adding
-                Button(
-                    onClick = onAddToCollection,
-                    enabled = addState == AddCollectionState.Idle,
-                    colors = if (inCollection) ButtonDefaults.buttonColors(
-                        disabledContainerColor = IssueBadgeGreen,
-                        disabledContentColor = Color.White
-                    ) else ButtonDefaults.buttonColors(),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .height(16.dp)
-                                .width(16.dp),
-                            strokeWidth = 2.dp,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                val isLoading = addState == AddCollectionState.Checking || addState == AddCollectionState.Adding || addState == AddCollectionState.Removing
+                if (addState == AddCollectionState.InCollection) {
+                    Button(
+                        onClick = onRemoveFromCollection,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFB71C1C),
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Remove from Collection")
                     }
-                    Text(
-                        when (addState) {
-                            AddCollectionState.Checking, AddCollectionState.Adding -> "Loading..."
-                            AddCollectionState.InCollection -> "In Collection"
-                            AddCollectionState.Added -> "Added to Collection!"
-                            AddCollectionState.Idle -> "Add to Collection"
+                } else {
+                    Button(
+                        onClick = onAddToCollection,
+                        enabled = addState == AddCollectionState.Idle,
+                        colors = if (addState == AddCollectionState.Added) ButtonDefaults.buttonColors(
+                            disabledContainerColor = IssueBadgeGreen,
+                            disabledContentColor = Color.White
+                        ) else ButtonDefaults.buttonColors(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .height(16.dp)
+                                    .width(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                         }
-                    )
+                        Text(
+                            when (addState) {
+                                AddCollectionState.Checking, AddCollectionState.Adding, AddCollectionState.Removing -> "Loading..."
+                                AddCollectionState.Added -> "Added to Collection!"
+                                else -> "Add to Collection"
+                            }
+                        )
+                    }
                 }
             }
         }

@@ -1,6 +1,7 @@
 package com.moravian.comictracker.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,7 +56,7 @@ private val TextPrimary = Color.White
 private val TextMuted = Color(0xFF888888)
 
 @Composable
-fun CollectionScreen(viewModel: CollectionViewModel) {
+fun CollectionScreen(viewModel: CollectionViewModel, onSeriesClick: (Int) -> Unit = {}) {
     val series by viewModel.series.collectAsStateWithLifecycle()
     val layout by viewModel.collectionLayout.collectAsStateWithLifecycle()
 
@@ -91,15 +92,15 @@ fun CollectionScreen(viewModel: CollectionViewModel) {
             EmptyShelf()
         } else {
             when (layout) {
-                CollectionLayout.GRID -> GridShelf(series)
-                CollectionLayout.LIST -> ListShelf(series)
+                CollectionLayout.GRID -> GridShelf(series, onSeriesClick)
+                CollectionLayout.LIST -> ListShelf(series, onSeriesClick)
             }
         }
     }
 }
 
 @Composable
-private fun GridShelf(series: List<SeriesEntity>) {
+private fun GridShelf(series: List<SeriesEntity>, onSeriesClick: (Int) -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -107,18 +108,18 @@ private fun GridShelf(series: List<SeriesEntity>) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        items(series) { s -> SeriesCard(s) }
+        items(series) { s -> SeriesCard(s, onSeriesClick) }
     }
 }
 
 @Composable
-private fun ListShelf(series: List<SeriesEntity>) {
+private fun ListShelf(series: List<SeriesEntity>, onSeriesClick: (Int) -> Unit) {
     LazyColumn(
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        items(series) { s -> SeriesListRow(s) }
+        items(series) { s -> SeriesListRow(s, onSeriesClick) }
     }
 }
 
@@ -142,8 +143,8 @@ private fun EmptyShelf() {
 }
 
 @Composable
-private fun SeriesCard(series: SeriesEntity) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+private fun SeriesCard(series: SeriesEntity, onSeriesClick: (Int) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth().clickable { onSeriesClick(series.comicvineId) }) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -187,10 +188,11 @@ private fun SeriesCard(series: SeriesEntity) {
 }
 
 @Composable
-private fun SeriesListRow(series: SeriesEntity) {
+private fun SeriesListRow(series: SeriesEntity, onSeriesClick: (Int) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onSeriesClick(series.comicvineId) }
             .background(CardBackground, RoundedCornerShape(8.dp))
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,

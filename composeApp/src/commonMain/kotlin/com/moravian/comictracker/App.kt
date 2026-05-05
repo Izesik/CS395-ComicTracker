@@ -128,7 +128,8 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                 }
                 composable(Screen.MyCollection.route) {
                     CollectionScreen(
-                        viewModel = viewModel(factory = CollectionViewModel.factory(database, prefsRepository))
+                        viewModel = viewModel(factory = CollectionViewModel.factory(database, prefsRepository)),
+                        onSeriesClick = { navController.navigate("comic_detail/$it") }
                     )
                 }
                 composable(Screen.Search.route) {

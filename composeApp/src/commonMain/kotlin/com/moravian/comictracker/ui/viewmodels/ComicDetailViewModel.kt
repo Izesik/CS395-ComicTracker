@@ -92,6 +92,15 @@ class ComicDetailViewModel(
         }
     }
 
+    fun removeFromCollection() {
+        viewModelScope.launch {
+            _addState.value = AddCollectionState.Removing
+            val existing = dao.getSeriesByComicVineId(seriesId)
+            if (existing != null) dao.deleteSeries(existing.id)
+            _addState.value = AddCollectionState.Idle
+        }
+    }
+
     companion object {
         fun factory(seriesId: Int, database: ComicTrackerDatabase): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
