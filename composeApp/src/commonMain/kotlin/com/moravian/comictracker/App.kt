@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +38,11 @@ import com.moravian.comictracker.ui.screens.ComicWebViewScreen
 import com.moravian.comictracker.ui.screens.HomeScreen
 import com.moravian.comictracker.ui.screens.IssueDetailScreen
 import com.moravian.comictracker.ui.screens.SearchScreen
+import com.moravian.comictracker.ui.theme.Amber
+import com.moravian.comictracker.ui.theme.AmberSubtle
+import com.moravian.comictracker.ui.theme.ColorNavBar
+import com.moravian.comictracker.ui.theme.ColorOnSurfaceMuted
+import com.moravian.comictracker.ui.theme.ComicTrackerTheme
 import com.moravian.comictracker.ui.viewmodels.CollectionViewModel
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
 import com.moravian.comictracker.ui.viewmodels.SearchViewModel
@@ -54,7 +60,7 @@ private val hideBottomBarPrefixes = listOf("comic_detail", "issue_detail", "webv
 
 @Composable
 fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesRepository) {
-    MaterialTheme {
+    ComicTrackerTheme {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
@@ -72,8 +78,8 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     FloatingActionButton(
                         onClick = { navController.navigate("barcode_scan") },
                         shape = CircleShape,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        containerColor = Amber,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ) {
                         Icon(
                             imageVector = Icons.Filled.QrCodeScanner,
@@ -84,10 +90,14 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
             },
             bottomBar = {
                 if (showBottomBar) {
-                    NavigationBar {
+                    NavigationBar(
+                        containerColor = ColorNavBar,
+                        contentColor = ColorOnSurfaceMuted,
+                    ) {
                         navItems.forEach { screen ->
+                            val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                             NavigationBarItem(
-                                selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                                selected = selected,
                                 onClick = {
                                     navController.navigate(screen.route) {
                                         popUpTo(navController.graph.findStartDestination().id) {
@@ -107,7 +117,14 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                                         contentDescription = screen.label
                                     )
                                 },
-                                label = { Text(screen.label) }
+                                label = { Text(screen.label) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Amber,
+                                    selectedTextColor = Amber,
+                                    indicatorColor = AmberSubtle,
+                                    unselectedIconColor = ColorOnSurfaceMuted,
+                                    unselectedTextColor = ColorOnSurfaceMuted,
+                                )
                             )
                         }
                     }

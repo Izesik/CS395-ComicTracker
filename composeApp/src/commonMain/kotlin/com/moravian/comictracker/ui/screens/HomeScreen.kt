@@ -46,11 +46,11 @@ import comictracker.composeapp.generated.resources.Res
 import comictracker.composeapp.generated.resources.app_name
 import org.jetbrains.compose.resources.stringResource
 
-private val HomeBackground = Color(0xFF121212)
-private val CardBackground = Color(0xFF1E1E1E)
+private val HomeBackground = Color(0xFF0F0F0F)
+private val CardBackground = Color(0xFF1A1A1A)
 private val TextPrimary = Color.White
-private val TextMuted = Color(0xFF888888)
-private val AccentWhite = Color.White
+private val TextMuted = Color(0xFF777777)
+private val AccentAmber = Color(0xFFFFB300)
 
 @Composable
 fun HomeScreen(
@@ -81,7 +81,7 @@ fun HomeScreen(
         when (val state = uiState) {
             is HomeUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = AccentWhite)
+                    CircularProgressIndicator(color = AccentAmber)
                 }
             }
             is HomeUiState.Error -> {
@@ -157,7 +157,7 @@ private fun TabLabel(text: String, selected: Boolean, onClick: () -> Unit) {
                 .width(if (selected) 20.dp else 0.dp)
                 .height(2.dp)
                 .clip(CircleShape)
-                .background(AccentWhite)
+                .background(AccentAmber)
         )
     }
 }

@@ -50,10 +50,10 @@ import comictracker.composeapp.generated.resources.no_comics_on_shelf
 import comictracker.composeapp.generated.resources.shelf_label
 import org.jetbrains.compose.resources.stringResource
 
-private val CollectionBackground = Color(0xFF121212)
-private val CardBackground = Color(0xFF1E1E1E)
+private val CollectionBackground = Color(0xFF0F0F0F)
+private val CardBackground = Color(0xFF1A1A1A)
 private val TextPrimary = Color.White
-private val TextMuted = Color(0xFF888888)
+private val TextMuted = Color(0xFF777777)
 
 @Composable
 fun CollectionScreen(viewModel: CollectionViewModel, onSeriesClick: (Int) -> Unit = {}) {

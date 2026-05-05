@@ -54,7 +54,7 @@ import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailUiState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailViewModel
 
-private val ScreenBackground = Color(0xFF121212)
+private val ScreenBackground = Color(0xFF0F0F0F)
 private val TextPrimary = Color.White
 private val TextSecondary = Color(0xFFAAAAAA)
 private val BadgeGreen = Color(0xFF2E7D32)

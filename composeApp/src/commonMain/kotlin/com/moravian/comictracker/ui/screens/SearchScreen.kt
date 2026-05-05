@@ -39,10 +39,10 @@ import comictracker.composeapp.generated.resources.no_results_found
 import comictracker.composeapp.generated.resources.searching_comics
 import org.jetbrains.compose.resources.stringResource
 
-private val SearchBackground = Color(0xFF121212)
-private val FieldBackground = Color(0xFF1E1E1E)
+private val SearchBackground = Color(0xFF0F0F0F)
+private val FieldBackground = Color(0xFF1A1A1A)
 private val TextPrimary = Color.White
-private val TextMuted = Color(0xFF888888)
+private val TextMuted = Color(0xFF777777)
 
 @Composable
 fun SearchScreen(
