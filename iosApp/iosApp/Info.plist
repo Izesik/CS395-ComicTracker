@@ -8,7 +8,9 @@
 	<string>UIStatusBarStyleLightContent</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>CFBundleName</key>
+	<string>ComicShelf</string>
 	<key>NSCameraUsageDescription</key>
-	<string>ComicTracker uses the camera to scan comic barcodes.</string>
+	<string>ComicShelf uses the camera to scan comic barcodes.</string>
 </dict>
 </plist>
