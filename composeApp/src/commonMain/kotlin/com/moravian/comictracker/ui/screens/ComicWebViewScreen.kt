@@ -6,10 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.moravian.comictracker.ui.components.PlatformBackButton
 
 private val WebViewBackground = Color(0xFF121212)
 private val WebViewTextPrimary = Color.White
@@ -32,13 +29,7 @@ fun ComicWebViewScreen(url: String, title: String, onBack: () -> Unit) {
                 .background(Color(0xFF1E1E1E))
                 .padding(end = 16.dp)
         ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = WebViewTextPrimary
-                )
-            }
+            PlatformBackButton(onBack = onBack, overlaid = false)
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,

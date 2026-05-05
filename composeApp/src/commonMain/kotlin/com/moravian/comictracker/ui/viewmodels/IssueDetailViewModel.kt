@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.moravian.comictracker.data.ComicDao
 import com.moravian.comictracker.data.ComicIssueEntity
 import com.moravian.comictracker.data.ComicTrackerDatabase
+import com.moravian.comictracker.data.CreatorEntity
 import com.moravian.comictracker.data.SeriesEntity
 import com.moravian.comictracker.network.ComicVineApi
 import com.moravian.comictracker.network.ComicVineIssue
@@ -95,7 +96,7 @@ class IssueDetailViewModel(
                 )
             }
 
-            dao.insertComicIssue(
+            val issueRowId = dao.insertComicIssue(
                 ComicIssueEntity(
                     comicvineId = issue.id,
                     seriesId = seriesId,
@@ -104,6 +105,16 @@ class IssueDetailViewModel(
                     coverImageUrl = issue.image?.coverUrl()
                 )
             )
+            issue.personCredits.forEach { credit ->
+                dao.insertCreator(
+                    CreatorEntity(
+                        issueId = issueRowId,
+                        comicvineId = credit.id,
+                        name = credit.name,
+                        role = credit.role
+                    )
+                )
+            }
             _addState.value = AddCollectionState.Added
         }
     }

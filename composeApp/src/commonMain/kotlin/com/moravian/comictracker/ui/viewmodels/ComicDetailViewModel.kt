@@ -6,12 +6,14 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.moravian.comictracker.data.ComicDao
 import com.moravian.comictracker.data.ComicTrackerDatabase
+import com.moravian.comictracker.data.CreatorEntity
 import com.moravian.comictracker.data.SeriesEntity
 import com.moravian.comictracker.network.ComicVineApi
 import com.moravian.comictracker.network.ComicVineIssueSummary
 import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.network.coverUrl
 import com.moravian.comictracker.network.toUserFacingNetworkMessage
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +40,14 @@ class ComicDetailViewModel(
 
     private val _issues = MutableStateFlow<List<ComicVineIssueSummary>>(emptyList())
     val issues: StateFlow<List<ComicVineIssueSummary>> = _issues.asStateFlow()
+
+    private val _collectionIssueIds = MutableStateFlow<Set<Int>>(emptySet())
+    val collectionIssueIds: StateFlow<Set<Int>> = _collectionIssueIds.asStateFlow()
+
+    private val _seriesCreators = MutableStateFlow<List<CreatorEntity>>(emptyList())
+    val seriesCreators: StateFlow<List<CreatorEntity>> = _seriesCreators.asStateFlow()
+
+    private var collectionDataJob: Job? = null
 
     init {
         loadSeriesDetails()
@@ -73,6 +83,23 @@ class ComicDetailViewModel(
         viewModelScope.launch {
             val existing = dao.getSeriesByComicVineId(seriesId)
             _addState.value = if (existing != null) AddCollectionState.InCollection else AddCollectionState.Idle
+            if (existing != null) observeCollectionData(existing.id)
+        }
+    }
+
+    private fun observeCollectionData(localSeriesId: Long) {
+        collectionDataJob?.cancel()
+        collectionDataJob = viewModelScope.launch {
+            launch {
+                dao.getComicIssuesForSeries(localSeriesId).collect { list ->
+                    _collectionIssueIds.value = list.map { it.comicvineId }.toSet()
+                }
+            }
+            launch {
+                dao.getCreatorsForSeries(localSeriesId).collect { creators ->
+                    _seriesCreators.value = creators
+                }
+            }
         }
     }
 
@@ -80,7 +107,7 @@ class ComicDetailViewModel(
         val series = (uiState.value as? ComicDetailUiState.Success)?.series ?: return
         viewModelScope.launch {
             _addState.value = AddCollectionState.Adding
-            dao.insertSeries(
+            val newId = dao.insertSeries(
                 SeriesEntity(
                     comicvineId = series.id,
                     title = series.name,
@@ -88,6 +115,7 @@ class ComicDetailViewModel(
                     coverImageUrl = series.image?.coverUrl()
                 )
             )
+            observeCollectionData(newId)
             _addState.value = AddCollectionState.Added
         }
     }
@@ -97,6 +125,10 @@ class ComicDetailViewModel(
             _addState.value = AddCollectionState.Removing
             val existing = dao.getSeriesByComicVineId(seriesId)
             if (existing != null) dao.deleteSeries(existing.id)
+            collectionDataJob?.cancel()
+            collectionDataJob = null
+            _collectionIssueIds.value = emptySet()
+            _seriesCreators.value = emptyList()
             _addState.value = AddCollectionState.Idle
         }
     }

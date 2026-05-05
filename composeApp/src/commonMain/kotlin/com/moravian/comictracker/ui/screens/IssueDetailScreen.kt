@@ -15,10 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -26,7 +23,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
@@ -48,6 +44,7 @@ import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.network.ComicVineCharacter
 import com.moravian.comictracker.network.ComicVineIssue
 import com.moravian.comictracker.network.coverUrl
+import com.moravian.comictracker.ui.components.PlatformBackButton
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailUiState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailViewModel
@@ -56,7 +53,7 @@ private val ScreenBackground = Color(0xFF0F0F0F)
 private val IssueTextPrimary = Color.White
 private val IssueTextSecondary = Color(0xFFAAAAAA)
 private val IssueBadgeGreen = Color(0xFF2E7D32)
-private val IssueOverlayDark = Color.Black.copy(alpha = 0.55f)
+
 
 @Composable
 fun IssueDetailScreen(
@@ -412,18 +409,7 @@ private fun IssueCharacterChip(character: ComicVineCharacter) {
 
 @Composable
 private fun IssueBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(
-        onClick = onBack,
-        modifier = modifier
-            .padding(top = 12.dp, start = 12.dp)
-            .background(IssueOverlayDark, CircleShape)
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = "Back",
-            tint = IssueTextPrimary
-        )
-    }
+    PlatformBackButton(onBack = onBack, modifier = modifier, overlaid = true)
 }
 
 private fun buildIssueMeta(publisher: String?, coverDate: String?): String =

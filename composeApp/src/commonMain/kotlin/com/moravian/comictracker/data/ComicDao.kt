@@ -36,4 +36,18 @@ interface ComicDao {
 
     @Query("SELECT * FROM SeriesEntity WHERE title LIKE '%' || :query || '%'")
     fun searchSeries(query: String): Flow<List<SeriesEntity>>
+
+    @Insert
+    suspend fun insertCreator(creator: CreatorEntity): Long
+
+    @Query("SELECT * FROM CreatorEntity WHERE issueId = :issueId")
+    fun getCreatorsForIssue(issueId: Long): Flow<List<CreatorEntity>>
+
+    @Query("""
+        SELECT ce.* FROM CreatorEntity ce
+        INNER JOIN ComicIssueEntity cie ON ce.issueId = cie.id
+        WHERE cie.seriesId = :localSeriesId
+        GROUP BY ce.comicvineId
+    """)
+    fun getCreatorsForSeries(localSeriesId: Long): Flow<List<CreatorEntity>>
 }

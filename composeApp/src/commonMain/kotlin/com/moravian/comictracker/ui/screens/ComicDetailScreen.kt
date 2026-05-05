@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -15,23 +14,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,9 +38,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.ComicTrackerDatabase
+import com.moravian.comictracker.data.CreatorEntity
 import com.moravian.comictracker.network.ComicVineIssueSummary
 import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.network.coverUrl
+import com.moravian.comictracker.ui.components.PlatformBackButton
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailUiState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailViewModel
@@ -58,7 +51,6 @@ private val ScreenBackground = Color(0xFF0F0F0F)
 private val TextPrimary = Color.White
 private val TextSecondary = Color(0xFFAAAAAA)
 private val BadgeGreen = Color(0xFF2E7D32)
-private val OverlayDark = Color.Black.copy(alpha = 0.55f)
 
 @Composable
 fun ComicDetailScreen(
@@ -72,6 +64,8 @@ fun ComicDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val addState by viewModel.addState.collectAsStateWithLifecycle()
     val issues by viewModel.issues.collectAsStateWithLifecycle()
+    val collectionIssueIds by viewModel.collectionIssueIds.collectAsStateWithLifecycle()
+    val seriesCreators by viewModel.seriesCreators.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize().background(ScreenBackground)) {
         when (val state = uiState) {
@@ -93,6 +87,8 @@ fun ComicDetailScreen(
             is ComicDetailUiState.Success -> DetailContent(
                 series = state.series,
                 issues = issues,
+                collectionIssueIds = collectionIssueIds,
+                creators = seriesCreators,
                 onBack = onBack,
                 addState = addState,
                 onAddToCollection = { viewModel.addToCollection() },
@@ -108,6 +104,8 @@ fun ComicDetailScreen(
 private fun DetailContent(
     series: ComicVineVolume,
     issues: List<ComicVineIssueSummary>,
+    collectionIssueIds: Set<Int>,
+    creators: List<CreatorEntity>,
     onBack: () -> Unit,
     addState: AddCollectionState,
     onAddToCollection: () -> Unit,
@@ -169,7 +167,9 @@ private fun DetailContent(
                             text = "SERIES",
                             style = MaterialTheme.typography.labelSmall,
                             color = TextSecondary,
-                            letterSpacing = androidx.compose.ui.unit.TextUnit(1.5f, androidx.compose.ui.unit.TextUnitType.Sp)
+                            letterSpacing = androidx.compose.ui.unit.TextUnit(
+                                1.5f, androidx.compose.ui.unit.TextUnitType.Sp
+                            )
                         )
                         Text(
                             text = series.name,
@@ -211,6 +211,50 @@ private fun DetailContent(
             }
         }
 
+        // ── Creators ──────────────────────────────────────────────────────
+        if (creators.isNotEmpty()) {
+            item {
+                HorizontalDivider(
+                    color = Color.White.copy(alpha = 0.12f),
+                    modifier = Modifier.background(ScreenBackground)
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground)
+                        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "Creators",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    creators.forEach { creator ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = creator.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.Medium
+                            )
+                            creator.role?.takeIf { it.isNotBlank() }?.let { role ->
+                                Text(
+                                    text = role,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // ── Add to collection ─────────────────────────────────────────────
         item {
             HorizontalDivider(
@@ -225,7 +269,9 @@ private fun DetailContent(
                     .background(ScreenBackground)
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                val isLoading = addState == AddCollectionState.Checking || addState == AddCollectionState.Adding || addState == AddCollectionState.Removing
+                val isLoading = addState == AddCollectionState.Checking ||
+                        addState == AddCollectionState.Adding ||
+                        addState == AddCollectionState.Removing
                 if (addState == AddCollectionState.InCollection) {
                     Button(
                         onClick = onRemoveFromCollection,
@@ -249,9 +295,7 @@ private fun DetailContent(
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                modifier = Modifier
-                                    .height(16.dp)
-                                    .width(16.dp),
+                                modifier = Modifier.height(16.dp).width(16.dp),
                                 strokeWidth = 2.dp,
                                 color = Color.White
                             )
@@ -259,7 +303,9 @@ private fun DetailContent(
                         }
                         Text(
                             when (addState) {
-                                AddCollectionState.Checking, AddCollectionState.Adding, AddCollectionState.Removing -> "Loading..."
+                                AddCollectionState.Checking,
+                                AddCollectionState.Adding,
+                                AddCollectionState.Removing -> "Loading..."
                                 AddCollectionState.Added -> "Added to Collection!"
                                 else -> "Add to Collection"
                             }
@@ -317,11 +363,11 @@ private fun DetailContent(
                     rowIssues.forEach { issue ->
                         IssueGridCell(
                             issue = issue,
+                            inCollection = issue.id in collectionIssueIds,
                             modifier = Modifier.weight(1f),
                             onClick = { onIssueClick(issue.id) }
                         )
                     }
-                    // Fill remaining slots so cells stay uniform width
                     repeat(3 - rowIssues.size) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
@@ -342,6 +388,7 @@ private fun DetailContent(
 @Composable
 private fun IssueGridCell(
     issue: ComicVineIssueSummary,
+    inCollection: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -362,15 +409,13 @@ private fun IssueGridCell(
                 modifier = Modifier.fillMaxSize()
             )
         }
+        // Issue number at bottom
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .background(
-                    Brush.verticalGradient(
-                        0f to Color.Transparent,
-                        1f to Color.Black.copy(alpha = 0.75f)
-                    ),
+                    Brush.verticalGradient(0f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.75f)),
                     RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp)
                 )
                 .padding(horizontal = 4.dp, vertical = 4.dp),
@@ -382,6 +427,27 @@ private fun IssueGridCell(
                 color = Color.White,
                 fontWeight = FontWeight.Bold
             )
+        }
+        // IN COLLECTION banner at top
+        if (inCollection) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .background(
+                        BadgeGreen.copy(alpha = 0.9f),
+                        RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+                    )
+                    .padding(vertical = 3.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "IN COLLECTION",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -412,18 +478,7 @@ private fun IssueBadge(count: Int) {
 
 @Composable
 private fun TopBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(
-        onClick = onBack,
-        modifier = modifier
-            .padding(top = 12.dp, start = 12.dp)
-            .background(OverlayDark, CircleShape)
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = "Back",
-            tint = TextPrimary
-        )
-    }
+    PlatformBackButton(onBack = onBack, modifier = modifier, overlaid = true)
 }
 
 private fun buildHeroMeta(startYear: String?, publisher: String?): String =
