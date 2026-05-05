@@ -45,6 +45,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.moravian.comictracker.AppLog
+import comictracker.composeapp.generated.resources.Res
+import comictracker.composeapp.generated.resources.back_cd
+import comictracker.composeapp.generated.resources.barcode_scan_frame_hint
+import comictracker.composeapp.generated.resources.camera_permission_required
+import comictracker.composeapp.generated.resources.grant_permission
+import org.jetbrains.compose.resources.stringResource
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
@@ -100,7 +106,7 @@ actual fun BarcodeCameraView(onBarcodeDetected: (String) -> Unit, onDismiss: () 
                     .border(2.dp, Color.White.copy(alpha = 0.85f), RoundedCornerShape(10.dp))
             )
             Text(
-                text = "Align both barcodes in frame",
+                text = stringResource(Res.string.barcode_scan_frame_hint),
                 color = Color.White,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
@@ -115,13 +121,13 @@ actual fun BarcodeCameraView(onBarcodeDetected: (String) -> Unit, onDismiss: () 
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Camera access is required to scan barcodes",
+                    stringResource(Res.string.camera_permission_required),
                     color = Color.White,
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }) {
-                    Text("Grant Permission")
+                    Text(stringResource(Res.string.grant_permission))
                 }
             }
         }
@@ -136,7 +142,7 @@ actual fun BarcodeCameraView(onBarcodeDetected: (String) -> Unit, onDismiss: () 
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(Res.string.back_cd),
                 tint = Color.White
             )
         }

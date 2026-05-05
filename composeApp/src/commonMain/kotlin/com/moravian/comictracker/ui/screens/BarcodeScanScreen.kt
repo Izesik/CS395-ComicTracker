@@ -27,11 +27,23 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moravian.comictracker.ui.viewmodels.BarcodeScanState
 import com.moravian.comictracker.ui.viewmodels.BarcodeScanViewModel
+import comictracker.composeapp.generated.resources.Res
+import comictracker.composeapp.generated.resources.barcode_incomplete_message
+import comictracker.composeapp.generated.resources.barcode_incomplete_title
+import comictracker.composeapp.generated.resources.cancel
+import comictracker.composeapp.generated.resources.comic_not_found_message
+import comictracker.composeapp.generated.resources.comic_not_found_title
+import comictracker.composeapp.generated.resources.looking_up_barcode
+import comictracker.composeapp.generated.resources.lookup_failed_message
+import comictracker.composeapp.generated.resources.lookup_failed_title
+import comictracker.composeapp.generated.resources.scan_again
+import org.jetbrains.compose.resources.stringResource
 
-// Platform-specific camera preview — actuals in androidMain and iosMain.
+/** Platform-specific camera preview that invokes [onBarcodeDetected] when a barcode is decoded. */
 @Composable
 expect fun BarcodeCameraView(onBarcodeDetected: (String) -> Unit, onDismiss: () -> Unit)
 
+/** Top-level route for barcode scanning; handles state transitions from scanning to issue navigation. */
 @Composable
 fun BarcodeScanRoute(
     onIssueFound: (issueId: Int) -> Unit,
@@ -58,8 +70,8 @@ fun BarcodeScanRoute(
         when (scanState) {
             is BarcodeScanState.Loading -> LoadingOverlay(upc = scanState.upc)
             is BarcodeScanState.NotFound -> NotFoundOverlay(
-                title = "Comic not found",
-                message = "This barcode wasn't found.",
+                title = stringResource(Res.string.comic_not_found_title),
+                message = stringResource(Res.string.comic_not_found_message),
                 onRetry = {
                     scanSession += 1
                     viewModel.reset()
@@ -67,8 +79,8 @@ fun BarcodeScanRoute(
                 onDismiss = onDismiss
             )
             is BarcodeScanState.SupplementMissing -> NotFoundOverlay(
-                title = "Barcode incomplete",
-                message = "Keep both barcodes in frame and hold steady. The small barcode to the right of the main one must also be visible.",
+                title = stringResource(Res.string.barcode_incomplete_title),
+                message = stringResource(Res.string.barcode_incomplete_message),
                 onRetry = {
                     scanSession += 1
                     viewModel.reset()
@@ -76,8 +88,8 @@ fun BarcodeScanRoute(
                 onDismiss = onDismiss
             )
             is BarcodeScanState.Error -> NotFoundOverlay(
-                title = "Lookup failed",
-                message = "Check your connection and Metron credentials, then try again.",
+                title = stringResource(Res.string.lookup_failed_title),
+                message = stringResource(Res.string.lookup_failed_message),
                 onRetry = {
                     scanSession += 1
                     viewModel.reset()
@@ -100,7 +112,7 @@ private fun LoadingOverlay(upc: String) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator(color = Color.White)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Looking up $upc…", color = Color.White, style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(Res.string.looking_up_barcode, upc), color = Color.White, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
@@ -135,10 +147,10 @@ private fun NotFoundOverlay(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = onRetry) { Text("Scan Again") }
+            Button(onClick = onRetry) { Text(stringResource(Res.string.scan_again)) }
             Spacer(modifier = Modifier.height(8.dp))
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color(0xFFAAAAAA))
+                Text(stringResource(Res.string.cancel), color = Color(0xFFAAAAAA))
             }
         }
     }

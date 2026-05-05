@@ -50,6 +50,10 @@ import com.moravian.comictracker.ui.viewmodels.CollectionViewModel
 import comictracker.composeapp.generated.resources.Res
 import comictracker.composeapp.generated.resources.no_comics_on_shelf
 import comictracker.composeapp.generated.resources.shelf_label
+import comictracker.composeapp.generated.resources.sorted_by_date_added
+import comictracker.composeapp.generated.resources.sorted_by_title
+import comictracker.composeapp.generated.resources.switch_to_grid_view
+import comictracker.composeapp.generated.resources.switch_to_list_view
 import org.jetbrains.compose.resources.stringResource
 
 private val CollectionBackground = Color(0xFF0F0F0F)
@@ -85,14 +89,14 @@ fun CollectionScreen(viewModel: CollectionViewModel, onSeriesClick: (Int) -> Uni
             IconButton(onClick = viewModel::toggleSort) {
                 Icon(
                     imageVector = Icons.Filled.SwapVert,
-                    contentDescription = if (sort == CollectionSort.TITLE) "Sorted by title" else "Sorted by date added",
+                    contentDescription = if (sort == CollectionSort.TITLE) stringResource(Res.string.sorted_by_title) else stringResource(Res.string.sorted_by_date_added),
                     tint = if (sort == CollectionSort.DATE_ADDED) TextPrimary else TextMuted
                 )
             }
             IconButton(onClick = viewModel::toggleLayout) {
                 Icon(
                     imageVector = if (layout == CollectionLayout.GRID) Icons.Filled.ViewList else Icons.Filled.GridView,
-                    contentDescription = if (layout == CollectionLayout.GRID) "Switch to list view" else "Switch to grid view",
+                    contentDescription = if (layout == CollectionLayout.GRID) stringResource(Res.string.switch_to_list_view) else stringResource(Res.string.switch_to_grid_view),
                     tint = TextMuted
                 )
             }

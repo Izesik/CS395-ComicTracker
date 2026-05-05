@@ -58,12 +58,31 @@ import com.moravian.comictracker.ui.components.PlatformBackButton
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailUiState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailViewModel
+import comictracker.composeapp.generated.resources.Res
+import comictracker.composeapp.generated.resources.add_to_collection
+import comictracker.composeapp.generated.resources.added_to_collection
+import comictracker.composeapp.generated.resources.creators_label
+import comictracker.composeapp.generated.resources.filter_all
+import comictracker.composeapp.generated.resources.filter_in_collection
+import comictracker.composeapp.generated.resources.filter_not_in_collection
+import comictracker.composeapp.generated.resources.in_collection_badge
+import comictracker.composeapp.generated.resources.issues_count_label
+import comictracker.composeapp.generated.resources.issues_label
+import comictracker.composeapp.generated.resources.loading
+import comictracker.composeapp.generated.resources.no_issues_match_filter
+import comictracker.composeapp.generated.resources.remove_from_collection
+import comictracker.composeapp.generated.resources.series_type_label
+import comictracker.composeapp.generated.resources.sort_ascending_cd
+import comictracker.composeapp.generated.resources.sort_descending_cd
+import comictracker.composeapp.generated.resources.view_on_comicvine
+import org.jetbrains.compose.resources.stringResource
 
 private val ScreenBackground = Color(0xFF0F0F0F)
 private val TextPrimary = Color.White
 private val TextSecondary = Color(0xFFAAAAAA)
 private val BadgeGreen = Color(0xFF2E7D32)
 
+/** Detailed view for a comic series, including hero art, description, creators, and issues grid. */
 @Composable
 fun ComicDetailScreen(
     seriesId: Int,
@@ -180,7 +199,7 @@ private fun DetailContent(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "SERIES",
+                            text = stringResource(Res.string.series_type_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = TextSecondary,
                             letterSpacing = androidx.compose.ui.unit.TextUnit(
@@ -242,7 +261,7 @@ private fun DetailContent(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = "Creators",
+                        text = stringResource(Res.string.creators_label),
                         style = MaterialTheme.typography.titleSmall,
                         color = TextPrimary,
                         modifier = Modifier.padding(bottom = 6.dp)
@@ -296,7 +315,7 @@ private fun DetailContent(
                             contentColor = Color.White
                         ),
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Remove from Collection") }
+                    ) { Text(stringResource(Res.string.remove_from_collection)) }
                 } else {
                     Button(
                         onClick = onAddToCollection,
@@ -319,9 +338,9 @@ private fun DetailContent(
                             when (addState) {
                                 AddCollectionState.Checking,
                                 AddCollectionState.Adding,
-                                AddCollectionState.Removing -> "Loading..."
-                                AddCollectionState.Added -> "Added to Collection!"
-                                else -> "Add to Collection"
+                                AddCollectionState.Removing -> stringResource(Res.string.loading)
+                                AddCollectionState.Added -> stringResource(Res.string.added_to_collection)
+                                else -> stringResource(Res.string.add_to_collection)
                             }
                         )
                     }
@@ -342,7 +361,7 @@ private fun DetailContent(
                     onClick = onViewOnComicVine,
                     colors = ButtonDefaults.outlinedButtonColors(),
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("View on ComicVine") }
+                ) { Text(stringResource(Res.string.view_on_comicvine)) }
             }
         }
 
@@ -360,7 +379,7 @@ private fun DetailContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Issues",
+                    text = stringResource(Res.string.issues_label),
                     style = MaterialTheme.typography.titleSmall,
                     color = TextPrimary,
                     modifier = Modifier.weight(1f)
@@ -370,7 +389,7 @@ private fun DetailContent(
                         imageVector = if (sortOrder == IssuesSortOrder.NUMBER_ASC)
                             Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
                         contentDescription = if (sortOrder == IssuesSortOrder.NUMBER_ASC)
-                            "Sort descending" else "Sort ascending",
+                            stringResource(Res.string.sort_descending_cd) else stringResource(Res.string.sort_ascending_cd),
                         tint = TextSecondary
                     )
                 }
@@ -384,21 +403,21 @@ private fun DetailContent(
             ) {
                 item {
                     IssueFilterChip(
-                        text = "All",
+                        text = stringResource(Res.string.filter_all),
                         selected = collectionFilter == IssuesCollectionFilter.ALL,
                         onClick = { onSetFilter(IssuesCollectionFilter.ALL) }
                     )
                 }
                 item {
                     IssueFilterChip(
-                        text = "In Collection",
+                        text = stringResource(Res.string.filter_in_collection),
                         selected = collectionFilter == IssuesCollectionFilter.IN_COLLECTION,
                         onClick = { onSetFilter(IssuesCollectionFilter.IN_COLLECTION) }
                     )
                 }
                 item {
                     IssueFilterChip(
-                        text = "Not In Collection",
+                        text = stringResource(Res.string.filter_not_in_collection),
                         selected = collectionFilter == IssuesCollectionFilter.NOT_IN_COLLECTION,
                         onClick = { onSetFilter(IssuesCollectionFilter.NOT_IN_COLLECTION) }
                     )
@@ -423,7 +442,7 @@ private fun DetailContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No issues match this filter",
+                        text = stringResource(Res.string.no_issues_match_filter),
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary
                     )
@@ -539,7 +558,7 @@ private fun IssueGridCell(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "IN COLLECTION",
+                    text = stringResource(Res.string.in_collection_badge),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
@@ -559,7 +578,7 @@ private fun IssueBadge(count: Int) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = "$count", color = Color.White, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Text(text = "ISSUES", color = Color.White, style = MaterialTheme.typography.labelSmall)
+            Text(text = stringResource(Res.string.issues_count_label), color = Color.White, style = MaterialTheme.typography.labelSmall)
         }
     }
 }

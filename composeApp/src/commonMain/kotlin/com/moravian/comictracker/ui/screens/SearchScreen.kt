@@ -54,7 +54,11 @@ import com.moravian.comictracker.ui.viewmodels.SearchViewModel
 import com.moravian.comictracker.ui.viewmodels.SeriesSearchCard
 import comictracker.composeapp.generated.resources.Res
 import comictracker.composeapp.generated.resources.no_results_found
+import comictracker.composeapp.generated.resources.screen_search
+import comictracker.composeapp.generated.resources.search_comicvine_hint
 import comictracker.composeapp.generated.resources.searching_comics
+import comictracker.composeapp.generated.resources.switch_to_grid_view
+import comictracker.composeapp.generated.resources.switch_to_list_view
 import org.jetbrains.compose.resources.stringResource
 
 private val SearchBackground = Color(0xFF0F0F0F)
@@ -63,6 +67,7 @@ private val CardBackground = Color(0xFF1A1A1A)
 private val TextPrimary = Color.White
 private val TextMuted = Color(0xFF777777)
 
+/** Full-screen search interface for finding comic series via the ComicVine API. */
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel,
@@ -82,7 +87,7 @@ fun SearchScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Search",
+                text = stringResource(Res.string.screen_search),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = TextPrimary,
@@ -92,7 +97,7 @@ fun SearchScreen(
             IconButton(onClick = viewModel::toggleSearchLayout) {
                 Icon(
                     imageVector = if (searchLayout == SearchLayout.GRID) Icons.Filled.ViewList else Icons.Filled.GridView,
-                    contentDescription = if (searchLayout == SearchLayout.GRID) "Switch to list view" else "Switch to grid view",
+                    contentDescription = if (searchLayout == SearchLayout.GRID) stringResource(Res.string.switch_to_list_view) else stringResource(Res.string.switch_to_grid_view),
                     tint = TextMuted
                 )
             }
@@ -132,7 +137,7 @@ fun SearchScreen(
         when (val state = viewModel.uiState) {
             is SearchUiState.Idle -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = "Search ComicVine", color = TextMuted, fontSize = 14.sp)
+                    Text(text = stringResource(Res.string.search_comicvine_hint), color = TextMuted, fontSize = 14.sp)
                 }
             }
             is SearchUiState.Loading -> {

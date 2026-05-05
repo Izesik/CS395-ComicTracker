@@ -28,8 +28,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.SearchLayout
 import com.moravian.comictracker.data.UserPreferencesRepository
@@ -41,35 +46,55 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.reflect.KClass
 
 private val CardBackground = Color(0xFF1E1E1E)
 private val CoverPlaceholder = Color(0xFF2A2A2A)
 private val TextPrimary = Color.White
 private val TextMuted = Color(0xFF888888)
 
+/** Possible states for the search results area. */
 sealed class SearchUiState {
+    /** No search has been performed yet. */
     data object Idle : SearchUiState()
+    /** A search request is in flight. */
     data object Loading : SearchUiState()
+    /** Search completed with [results]. */
     data class Success(val results: List<ComicVineVolume>) : SearchUiState()
+    /** Search failed with a user-facing [message]. */
     data class Error(val message: String) : SearchUiState()
 }
 
-class SearchViewModel(private val prefsRepository: UserPreferencesRepository) : ViewModel() {
+/**
+ * ViewModel for the Search screen.
+ *
+ * Persists [searchQuery] across configuration changes via [SavedStateHandle] so the
+ * typed text is not lost on rotation or process restoration.
+ */
+class SearchViewModel(
+    private val prefsRepository: UserPreferencesRepository,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
     private val comicVine = ComicVineApi()
 
-    var searchQuery by mutableStateOf("")
+    /** The current text in the search field, restored automatically on config change. */
+    var searchQuery by mutableStateOf(savedStateHandle[KEY_QUERY] ?: "")
         private set
 
     var uiState by mutableStateOf<SearchUiState>(SearchUiState.Idle)
         private set
 
+    /** Persisted layout preference (grid vs. list) for search results. */
     val searchLayout: StateFlow<SearchLayout> = prefsRepository.searchLayout
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SearchLayout.GRID)
 
+    /** Updates [searchQuery] and persists it in [SavedStateHandle]. */
     fun onQueryChange(newQuery: String) {
         searchQuery = newQuery
+        savedStateHandle[KEY_QUERY] = newQuery
     }
 
+    /** Executes the search for the current [searchQuery] against the ComicVine API. */
     fun performSearch() {
         val query = searchQuery.trim()
         if (query.isBlank()) return
@@ -87,14 +112,28 @@ class SearchViewModel(private val prefsRepository: UserPreferencesRepository) : 
         }
     }
 
+    /** Toggles the result layout between grid and list, persisting the choice. */
     fun toggleSearchLayout() {
         viewModelScope.launch {
             val next = if (searchLayout.value == SearchLayout.GRID) SearchLayout.LIST else SearchLayout.GRID
             prefsRepository.setSearchLayout(next)
         }
     }
+
+    companion object {
+        private const val KEY_QUERY = "search_query"
+
+        /** Creates a factory that injects [prefsRepository] and a [SavedStateHandle]. */
+        fun factory(prefsRepository: UserPreferencesRepository): ViewModelProvider.Factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T =
+                    SearchViewModel(prefsRepository, extras.createSavedStateHandle()) as T
+            }
+    }
 }
 
+/** List-row card used when search results are displayed in list layout. */
 @Composable
 fun SeriesSearchCard(
     result: ComicVineVolume,

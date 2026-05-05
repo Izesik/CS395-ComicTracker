@@ -48,13 +48,23 @@ import com.moravian.comictracker.ui.components.PlatformBackButton
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailUiState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailViewModel
+import comictracker.composeapp.generated.resources.Res
+import comictracker.composeapp.generated.resources.add_to_collection
+import comictracker.composeapp.generated.resources.added_to_collection
+import comictracker.composeapp.generated.resources.characters_label
+import comictracker.composeapp.generated.resources.credits_label
+import comictracker.composeapp.generated.resources.issue_type_label
+import comictracker.composeapp.generated.resources.loading
+import comictracker.composeapp.generated.resources.remove_from_collection
+import comictracker.composeapp.generated.resources.view_on_comicvine
+import org.jetbrains.compose.resources.stringResource
 
 private val ScreenBackground = Color(0xFF0F0F0F)
 private val IssueTextPrimary = Color.White
 private val IssueTextSecondary = Color(0xFFAAAAAA)
 private val IssueBadgeGreen = Color(0xFF2E7D32)
 
-
+/** Detailed view for a single comic issue, including cover art, description, credits, and characters. */
 @Composable
 fun IssueDetailScreen(
     issueId: Int,
@@ -157,7 +167,7 @@ private fun IssueDetailContent(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "ISSUE",
+                            text = stringResource(Res.string.issue_type_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = IssueTextSecondary,
                             letterSpacing = androidx.compose.ui.unit.TextUnit(
@@ -218,7 +228,7 @@ private fun IssueDetailContent(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = "Credits",
+                        text = stringResource(Res.string.credits_label),
                         style = MaterialTheme.typography.titleSmall,
                         color = IssueTextPrimary,
                         modifier = Modifier.padding(bottom = 6.dp)
@@ -255,7 +265,7 @@ private fun IssueDetailContent(
                     modifier = Modifier.background(ScreenBackground)
                 )
                 Text(
-                    text = "Characters",
+                    text = stringResource(Res.string.characters_label),
                     style = MaterialTheme.typography.titleSmall,
                     color = IssueTextPrimary,
                     modifier = Modifier
@@ -307,7 +317,7 @@ private fun IssueDetailContent(
                         ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Remove from Collection")
+                        Text(stringResource(Res.string.remove_from_collection))
                     }
                 } else {
                     Button(
@@ -331,9 +341,9 @@ private fun IssueDetailContent(
                         }
                         Text(
                             when (addState) {
-                                AddCollectionState.Checking, AddCollectionState.Adding, AddCollectionState.Removing -> "Loading..."
-                                AddCollectionState.Added -> "Added to Collection!"
-                                else -> "Add to Collection"
+                                AddCollectionState.Checking, AddCollectionState.Adding, AddCollectionState.Removing -> stringResource(Res.string.loading)
+                                AddCollectionState.Added -> stringResource(Res.string.added_to_collection)
+                                else -> stringResource(Res.string.add_to_collection)
                             }
                         )
                     }
@@ -355,7 +365,7 @@ private fun IssueDetailContent(
                     colors = ButtonDefaults.outlinedButtonColors(),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("View on ComicVine")
+                    Text(stringResource(Res.string.view_on_comicvine))
                 }
             }
         }
@@ -378,7 +388,7 @@ private fun IssueNumberBadge(issueNumber: String) {
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "ISSUE",
+                text = stringResource(Res.string.issue_type_label),
                 color = Color.White,
                 style = MaterialTheme.typography.labelSmall
             )

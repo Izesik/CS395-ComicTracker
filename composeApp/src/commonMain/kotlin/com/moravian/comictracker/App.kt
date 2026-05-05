@@ -48,12 +48,17 @@ import com.moravian.comictracker.ui.viewmodels.HomeViewModel
 import com.moravian.comictracker.ui.viewmodels.SearchViewModel
 import comictracker.composeapp.generated.resources.Res
 import comictracker.composeapp.generated.resources.comicvine_label
+import comictracker.composeapp.generated.resources.scan_barcode_cd
+import comictracker.composeapp.generated.resources.screen_collection
+import comictracker.composeapp.generated.resources.screen_home
+import comictracker.composeapp.generated.resources.screen_search
 import org.jetbrains.compose.resources.stringResource
 
-sealed class Screen(val route: String, val label: String) {
-    object Home : Screen("home", "Home")
-    object MyCollection : Screen("my_collection", "My Collection")
-    object Search : Screen("search", "Search")
+/** Navigation destinations with their route identifiers. */
+sealed class Screen(val route: String) {
+    object Home : Screen("home")
+    object MyCollection : Screen("my_collection")
+    object Search : Screen("search")
 }
 
 private val hideBottomBarPrefixes = listOf("comic_detail", "issue_detail", "webview", "barcode_scan")
@@ -83,7 +88,7 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     ) {
                         Icon(
                             imageVector = Icons.Filled.QrCodeScanner,
-                            contentDescription = "Scan barcode"
+                            contentDescription = stringResource(Res.string.scan_barcode_cd)
                         )
                     }
                 }
@@ -96,6 +101,11 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     ) {
                         navItems.forEach { screen ->
                             val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
+                            val screenLabel = stringResource(when (screen) {
+                                Screen.Home -> Res.string.screen_home
+                                Screen.MyCollection -> Res.string.screen_collection
+                                Screen.Search -> Res.string.screen_search
+                            })
                             NavigationBarItem(
                                 selected = selected,
                                 onClick = {
@@ -114,10 +124,10 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                                             Screen.MyCollection -> Icons.Filled.Star
                                             Screen.Search -> Icons.Filled.Search
                                         },
-                                        contentDescription = screen.label
+                                        contentDescription = screenLabel
                                     )
                                 },
-                                label = { Text(screen.label) },
+                                label = { Text(screenLabel) },
                                 colors = NavigationBarItemDefaults.colors(
                                     selectedIconColor = Amber,
                                     selectedTextColor = Amber,
@@ -150,7 +160,9 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     )
                 }
                 composable(Screen.Search.route) {
-                    val searchViewModel: SearchViewModel = viewModel { SearchViewModel(prefsRepository) }
+                    val searchViewModel: SearchViewModel = viewModel(
+                        factory = SearchViewModel.factory(prefsRepository)
+                    )
                     SearchScreen(
                         viewModel = searchViewModel,
                         onComicClick = { seriesId ->
