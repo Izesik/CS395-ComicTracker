@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.CollectionLayout
+import com.moravian.comictracker.data.CollectionSort
 import com.moravian.comictracker.data.SeriesEntity
 import com.moravian.comictracker.ui.viewmodels.CollectionViewModel
 import comictracker.composeapp.generated.resources.Res
@@ -59,6 +61,7 @@ private val TextMuted = Color(0xFF777777)
 fun CollectionScreen(viewModel: CollectionViewModel, onSeriesClick: (Int) -> Unit = {}) {
     val series by viewModel.series.collectAsStateWithLifecycle()
     val layout by viewModel.collectionLayout.collectAsStateWithLifecycle()
+    val sort by viewModel.collectionSort.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -79,6 +82,13 @@ fun CollectionScreen(viewModel: CollectionViewModel, onSeriesClick: (Int) -> Uni
                 letterSpacing = (-0.5).sp,
                 modifier = Modifier.weight(1f)
             )
+            IconButton(onClick = viewModel::toggleSort) {
+                Icon(
+                    imageVector = Icons.Filled.SwapVert,
+                    contentDescription = if (sort == CollectionSort.TITLE) "Sorted by title" else "Sorted by date added",
+                    tint = if (sort == CollectionSort.DATE_ADDED) TextPrimary else TextMuted
+                )
+            }
             IconButton(onClick = viewModel::toggleLayout) {
                 Icon(
                     imageVector = if (layout == CollectionLayout.GRID) Icons.Filled.ViewList else Icons.Filled.GridView,

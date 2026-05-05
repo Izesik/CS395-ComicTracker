@@ -31,10 +31,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
+import com.moravian.comictracker.data.SearchLayout
+import com.moravian.comictracker.data.UserPreferencesRepository
 import com.moravian.comictracker.network.ComicVineApi
 import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.network.coverUrl
 import com.moravian.comictracker.network.toUserFacingNetworkMessage
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private val CardBackground = Color(0xFF1E1E1E)
@@ -49,7 +54,7 @@ sealed class SearchUiState {
     data class Error(val message: String) : SearchUiState()
 }
 
-class SearchViewModel : ViewModel() {
+class SearchViewModel(private val prefsRepository: UserPreferencesRepository) : ViewModel() {
     private val comicVine = ComicVineApi()
 
     var searchQuery by mutableStateOf("")
@@ -57,6 +62,9 @@ class SearchViewModel : ViewModel() {
 
     var uiState by mutableStateOf<SearchUiState>(SearchUiState.Idle)
         private set
+
+    val searchLayout: StateFlow<SearchLayout> = prefsRepository.searchLayout
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SearchLayout.GRID)
 
     fun onQueryChange(newQuery: String) {
         searchQuery = newQuery
@@ -76,6 +84,13 @@ class SearchViewModel : ViewModel() {
                     e.toUserFacingNetworkMessage("ComicVine", "Search failed")
                 )
             }
+        }
+    }
+
+    fun toggleSearchLayout() {
+        viewModelScope.launch {
+            val next = if (searchLayout.value == SearchLayout.GRID) SearchLayout.LIST else SearchLayout.GRID
+            prefsRepository.setSearchLayout(next)
         }
     }
 }

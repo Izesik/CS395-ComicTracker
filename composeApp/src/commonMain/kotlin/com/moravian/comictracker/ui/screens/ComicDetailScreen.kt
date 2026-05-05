@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -14,14 +15,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +48,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.data.CreatorEntity
+import com.moravian.comictracker.data.IssuesCollectionFilter
+import com.moravian.comictracker.data.IssuesSortOrder
+import com.moravian.comictracker.data.UserPreferencesRepository
 import com.moravian.comictracker.network.ComicVineIssueSummary
 import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.network.coverUrl
@@ -57,23 +69,25 @@ fun ComicDetailScreen(
     seriesId: Int,
     onBack: () -> Unit,
     database: ComicTrackerDatabase,
+    prefsRepository: UserPreferencesRepository,
     onIssueClick: (Int) -> Unit = {},
     onViewOnComicVine: () -> Unit = {},
-    viewModel: ComicDetailViewModel = viewModel(factory = ComicDetailViewModel.factory(seriesId, database))
+    viewModel: ComicDetailViewModel = viewModel(
+        factory = ComicDetailViewModel.factory(seriesId, database, prefsRepository)
+    )
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val addState by viewModel.addState.collectAsStateWithLifecycle()
-    val issues by viewModel.issues.collectAsStateWithLifecycle()
+    val displayedIssues by viewModel.displayedIssues.collectAsStateWithLifecycle()
     val collectionIssueIds by viewModel.collectionIssueIds.collectAsStateWithLifecycle()
     val seriesCreators by viewModel.seriesCreators.collectAsStateWithLifecycle()
+    val sortOrder by viewModel.issuesSortOrder.collectAsStateWithLifecycle()
+    val collectionFilter by viewModel.issuesCollectionFilter.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize().background(ScreenBackground)) {
         when (val state = uiState) {
             is ComicDetailUiState.Loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = TextPrimary
-                )
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = TextPrimary)
                 TopBackButton(onBack = onBack)
             }
             is ComicDetailUiState.Error -> {
@@ -86,9 +100,13 @@ fun ComicDetailScreen(
             }
             is ComicDetailUiState.Success -> DetailContent(
                 series = state.series,
-                issues = issues,
+                displayedIssues = displayedIssues,
                 collectionIssueIds = collectionIssueIds,
                 creators = seriesCreators,
+                sortOrder = sortOrder,
+                collectionFilter = collectionFilter,
+                onToggleSort = { viewModel.toggleSortOrder() },
+                onSetFilter = { viewModel.setCollectionFilter(it) },
                 onBack = onBack,
                 addState = addState,
                 onAddToCollection = { viewModel.addToCollection() },
@@ -103,9 +121,13 @@ fun ComicDetailScreen(
 @Composable
 private fun DetailContent(
     series: ComicVineVolume,
-    issues: List<ComicVineIssueSummary>,
+    displayedIssues: List<ComicVineIssueSummary>,
     collectionIssueIds: Set<Int>,
     creators: List<CreatorEntity>,
+    sortOrder: IssuesSortOrder,
+    collectionFilter: IssuesCollectionFilter,
+    onToggleSort: () -> Unit,
+    onSetFilter: (IssuesCollectionFilter) -> Unit,
     onBack: () -> Unit,
     addState: AddCollectionState,
     onAddToCollection: () -> Unit,
@@ -117,11 +139,7 @@ private fun DetailContent(
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         // ── Hero image ────────────────────────────────────────────────────
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(340.dp)
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().height(340.dp)) {
                 AsyncImage(
                     model = coverUrl,
                     contentDescription = null,
@@ -129,15 +147,13 @@ private fun DetailContent(
                     modifier = Modifier.fillMaxSize()
                 )
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                0.0f to Color.Black.copy(alpha = 0.35f),
-                                0.45f to Color.Black.copy(alpha = 0.05f),
-                                1.0f to Color.Black.copy(alpha = 0.92f)
-                            )
+                    modifier = Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(
+                            0.0f to Color.Black.copy(alpha = 0.35f),
+                            0.45f to Color.Black.copy(alpha = 0.05f),
+                            1.0f to Color.Black.copy(alpha = 0.92f)
                         )
+                    )
                 )
                 TopBackButton(onBack = onBack, modifier = Modifier.align(Alignment.TopStart))
                 Row(
@@ -184,9 +200,9 @@ private fun DetailContent(
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
-                        if (issues.isNotEmpty()) {
+                        if (series.countOfIssues != null && series.countOfIssues > 0) {
                             Spacer(modifier = Modifier.height(4.dp))
-                            IssueBadge(count = issues.size)
+                            IssueBadge(count = series.countOfIssues)
                         }
                     }
                 }
@@ -280,9 +296,7 @@ private fun DetailContent(
                             contentColor = Color.White
                         ),
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Remove from Collection")
-                    }
+                    ) { Text("Remove from Collection") }
                 } else {
                     Button(
                         onClick = onAddToCollection,
@@ -328,30 +342,95 @@ private fun DetailContent(
                     onClick = onViewOnComicVine,
                     colors = ButtonDefaults.outlinedButtonColors(),
                     modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("View on ComicVine")
-                }
+                ) { Text("View on ComicVine") }
             }
         }
 
-        // ── Issues grid ───────────────────────────────────────────────────
-        if (issues.isNotEmpty()) {
-            item {
-                HorizontalDivider(
-                    color = Color.White.copy(alpha = 0.12f),
-                    modifier = Modifier.background(ScreenBackground)
-                )
+        // ── Issues header + sort/filter controls ──────────────────────────
+        item {
+            HorizontalDivider(
+                color = Color.White.copy(alpha = 0.12f),
+                modifier = Modifier.background(ScreenBackground)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(ScreenBackground)
+                    .padding(start = 16.dp, end = 4.dp, top = 14.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = "Issues",
                     style = MaterialTheme.typography.titleSmall,
                     color = TextPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onToggleSort) {
+                    Icon(
+                        imageVector = if (sortOrder == IssuesSortOrder.NUMBER_ASC)
+                            Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                        contentDescription = if (sortOrder == IssuesSortOrder.NUMBER_ASC)
+                            "Sort descending" else "Sort ascending",
+                        tint = TextSecondary
+                    )
+                }
+            }
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(ScreenBackground),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    IssueFilterChip(
+                        text = "All",
+                        selected = collectionFilter == IssuesCollectionFilter.ALL,
+                        onClick = { onSetFilter(IssuesCollectionFilter.ALL) }
+                    )
+                }
+                item {
+                    IssueFilterChip(
+                        text = "In Collection",
+                        selected = collectionFilter == IssuesCollectionFilter.IN_COLLECTION,
+                        onClick = { onSetFilter(IssuesCollectionFilter.IN_COLLECTION) }
+                    )
+                }
+                item {
+                    IssueFilterChip(
+                        text = "Not In Collection",
+                        selected = collectionFilter == IssuesCollectionFilter.NOT_IN_COLLECTION,
+                        onClick = { onSetFilter(IssuesCollectionFilter.NOT_IN_COLLECTION) }
+                    )
+                }
+            }
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .background(ScreenBackground)
+            )
+        }
+
+        // ── Issues grid ───────────────────────────────────────────────────
+        if (displayedIssues.isEmpty()) {
+            item {
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(ScreenBackground)
-                        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp)
-                )
+                        .height(80.dp)
+                        .background(ScreenBackground),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No issues match this filter",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
+                    )
+                }
             }
-            val rows = issues.chunked(3)
+        } else {
+            val rows = displayedIssues.chunked(3)
             items(rows) { rowIssues ->
                 Row(
                     modifier = Modifier
@@ -368,21 +447,39 @@ private fun DetailContent(
                             onClick = { onIssueClick(issue.id) }
                         )
                     }
-                    repeat(3 - rowIssues.size) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+                    repeat(3 - rowIssues.size) { Spacer(modifier = Modifier.weight(1f)) }
                 }
             }
-            item {
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .background(ScreenBackground)
-                )
-            }
+        }
+
+        item {
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .background(ScreenBackground)
+            )
         }
     }
+}
+
+@Composable
+private fun IssueFilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(text, style = MaterialTheme.typography.labelSmall) },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = selected,
+            borderColor = Color.White.copy(alpha = 0.15f),
+            selectedBorderColor = Color.Transparent
+        )
+    )
 }
 
 @Composable
@@ -461,17 +558,8 @@ private fun IssueBadge(count: Int) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "$count",
-                color = Color.White,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "ISSUES",
-                color = Color.White,
-                style = MaterialTheme.typography.labelSmall
-            )
+            Text(text = "$count", color = Color.White, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(text = "ISSUES", color = Color.White, style = MaterialTheme.typography.labelSmall)
         }
     }
 }

@@ -140,7 +140,7 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     HomeScreen(
                         onVolumeClick = { navController.navigate("comic_detail/$it") },
                         onIssueClick = { navController.navigate("issue_detail/$it") },
-                        viewModel = viewModel { HomeViewModel() }
+                        viewModel = viewModel { HomeViewModel(prefsRepository) }
                     )
                 }
                 composable(Screen.MyCollection.route) {
@@ -150,7 +150,7 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                     )
                 }
                 composable(Screen.Search.route) {
-                    val searchViewModel: SearchViewModel = viewModel { SearchViewModel() }
+                    val searchViewModel: SearchViewModel = viewModel { SearchViewModel(prefsRepository) }
                     SearchScreen(
                         viewModel = searchViewModel,
                         onComicClick = { seriesId ->
@@ -167,6 +167,7 @@ fun App(database: ComicTrackerDatabase, prefsRepository: UserPreferencesReposito
                         seriesId = seriesId,
                         onBack = { navController.popBackStack() },
                         database = database,
+                        prefsRepository = prefsRepository,
                         onIssueClick = { navController.navigate("issue_detail/$it") },
                         onViewOnComicVine = { navController.navigate("webview/series/$seriesId") }
                     )
