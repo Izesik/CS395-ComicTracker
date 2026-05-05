@@ -15,6 +15,59 @@ import kotlinx.serialization.json.Json
 
 private const val METRON_BASE_URL = "https://metron.cloud/api"
 private const val COMICVINE_BASE_URL = "https://comicvine.gamespot.com/api"
+private const val COMICVINE_MAX_LIST_LIMIT = 100
+private const val HOME_SERIES_MAX_PAGES = 5
+private const val HOME_ISSUE_VOLUME_COUNT = 18
+private const val HOME_ISSUES_PER_VOLUME = 2
+
+private val HOME_SAFE_PUBLISHERS = setOf(
+    "archie comics",
+    "boom! studios",
+    "dark horse comics",
+    "dc comics",
+    "dell",
+    "dynamite entertainment",
+    "idw publishing",
+    "image comics",
+    "marvel",
+    "marvel comics",
+    "oni press",
+    "scholastic",
+    "valiant comics",
+    "viz media"
+)
+
+private val HOME_BLOCKED_TITLE_TERMS = listOf(
+    "adult",
+    "after dark",
+    "bad girl",
+    "barbarella",
+    "belladonna",
+    "bondage",
+    "cavewoman",
+    "crossed",
+    "dejah thoris",
+    "erotic",
+    "eros comix",
+    "grimm fairy tales",
+    "hellina",
+    "hellwitch",
+    "hentai",
+    "jungle fantasy",
+    "la muerta",
+    "lady death",
+    "lookers",
+    "mature",
+    "nude",
+    "pin-up",
+    "pinup",
+    "playboy",
+    "porn",
+    "sex",
+    "tarot: witch of the black rose",
+    "threshold",
+    "zombie tramp"
+)
 
 class ComicVineApi {
     private val client: HttpClient = createJsonClient()
@@ -32,25 +85,15 @@ class ComicVineApi {
     }
 
     suspend fun getPopularSeries(limit: Int = 12): List<ComicVineVolume> {
-        val response = client.get("$COMICVINE_BASE_URL/volumes/") {
-            comicVineParameters()
-            parameter("field_list", VOLUME_LIST_FIELDS)
-            parameter("sort", "date_last_updated:desc")
-            parameter("limit", limit)
-        }
-        if (!response.status.isSuccess()) throw Exception("ComicVine error: ${response.status}")
-        return response.body<ComicVinePagedResponse<ComicVineVolume>>().results
+        return getHomeSafeSeries(limit, HOME_SERIES_MAX_PAGES)
     }
 
     suspend fun getRecentIssues(limit: Int = 30): List<ComicVineIssueSummary> {
-        val response = client.get("$COMICVINE_BASE_URL/issues/") {
-            comicVineParameters()
-            parameter("field_list", ISSUE_LIST_FIELDS)
-            parameter("sort", "cover_date:desc")
-            parameter("limit", limit)
-        }
-        if (!response.status.isSuccess()) throw Exception("ComicVine error: ${response.status}")
-        return response.body<ComicVinePagedResponse<ComicVineIssueSummary>>().results
+        return getHomeSafeSeries(HOME_ISSUE_VOLUME_COUNT, HOME_SERIES_MAX_PAGES)
+            .flatMap { series -> getRecentIssuesByVolume(series.id, HOME_ISSUES_PER_VOLUME) }
+            .filter(::isHomeSafeIssue)
+            .sortedByDescending { it.coverDate.orEmpty() }
+            .take(limit)
     }
 
     suspend fun getVolume(id: Int): ComicVineVolume {
@@ -83,6 +126,42 @@ class ComicVineApi {
         return response.body<ComicVineSingleResponse<ComicVineIssue>>().results
     }
 
+    private suspend fun getHomeSafeSeries(limit: Int, maxPages: Int): List<ComicVineVolume> {
+        val series = mutableListOf<ComicVineVolume>()
+        var offset = 0
+
+        repeat(maxPages) {
+            val response = client.get("$COMICVINE_BASE_URL/volumes/") {
+                comicVineParameters()
+                parameter("field_list", VOLUME_LIST_FIELDS)
+                parameter("sort", "date_last_updated:desc")
+                parameter("limit", COMICVINE_MAX_LIST_LIMIT)
+                parameter("offset", offset)
+            }
+            if (!response.status.isSuccess()) throw Exception("ComicVine error: ${response.status}")
+
+            val page = response.body<ComicVinePagedResponse<ComicVineVolume>>().results
+            series += page.filter(::isHomeSafeSeries)
+            if (series.size >= limit || page.size < COMICVINE_MAX_LIST_LIMIT) return series.take(limit)
+
+            offset += COMICVINE_MAX_LIST_LIMIT
+        }
+
+        return series.take(limit)
+    }
+
+    private suspend fun getRecentIssuesByVolume(volumeId: Int, limit: Int): List<ComicVineIssueSummary> {
+        val response = client.get("$COMICVINE_BASE_URL/issues/") {
+            comicVineParameters()
+            parameter("field_list", ISSUE_LIST_FIELDS)
+            parameter("filter", "volume:$volumeId")
+            parameter("sort", "cover_date:desc")
+            parameter("limit", limit)
+        }
+        if (!response.status.isSuccess()) throw Exception("ComicVine error: ${response.status}")
+        return response.body<ComicVinePagedResponse<ComicVineIssueSummary>>().results
+    }
+
     private fun io.ktor.client.request.HttpRequestBuilder.comicVineParameters() {
         val apiKey = MetronConfig.COMICVINE_API_KEY
         if (apiKey.isBlank()) throw IllegalStateException("ComicVine API key is missing")
@@ -98,6 +177,23 @@ class ComicVineApi {
             "id,volume,issue_number,cover_date,store_date,image,description,person_credits,character_credits"
     }
 }
+
+private fun isHomeSafeSeries(series: ComicVineVolume): Boolean {
+    val title = series.name.normalizedHomeFeedText()
+    val publisher = series.publisher?.name?.normalizedHomeFeedText()
+
+    if (HOME_BLOCKED_TITLE_TERMS.any { it in title }) return false
+    return publisher == null || publisher in HOME_SAFE_PUBLISHERS
+}
+
+private fun isHomeSafeIssue(issue: ComicVineIssueSummary): Boolean {
+    val volumeTitle = issue.volume?.name?.normalizedHomeFeedText().orEmpty()
+
+    if (volumeTitle.isBlank()) return false
+    return HOME_BLOCKED_TITLE_TERMS.none { it in volumeTitle }
+}
+
+private fun String.normalizedHomeFeedText(): String = lowercase().trim()
 
 class MetronApi {
     private val client: HttpClient = createJsonClient {
