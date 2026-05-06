@@ -22,6 +22,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -80,50 +87,56 @@ fun HomeScreen(
             TabRow(selectedTab = selectedTab, onTabSelected = viewModel::selectTab)
         }
 
-        when (val state = uiState) {
-            is HomeUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = AccentAmber)
-                }
-            }
-
-            is HomeUiState.Error -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = state.message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(16.dp),
-                    )
-                }
-            }
-
-            is HomeUiState.SeriesSuccess -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    items(state.series) { series ->
-                        SeriesCard(series = series, onClick = { onVolumeClick(series.id) })
+        AnimatedContent(
+            targetState = uiState,
+            transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
+            modifier = Modifier.fillMaxSize(),
+        ) { state ->
+            when (state) {
+                is HomeUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = AccentAmber)
                     }
                 }
-            }
 
-            is HomeUiState.IssuesSuccess -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    items(state.issues) { issue ->
-                        IssueCard(
-                            issue = issue,
-                            onClick = { onIssueClick(issue.id) },
+                is HomeUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = state.message,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(16.dp),
                         )
+                    }
+                }
+
+                is HomeUiState.SeriesSuccess -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(state.series) { series ->
+                            SeriesCard(series = series, onClick = { onVolumeClick(series.id) })
+                        }
+                    }
+                }
+
+                is HomeUiState.IssuesSuccess -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(state.issues) { issue ->
+                            IssueCard(
+                                issue = issue,
+                                onClick = { onIssueClick(issue.id) },
+                            )
+                        }
                     }
                 }
             }
@@ -153,6 +166,14 @@ private fun TabLabel(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    val indicatorWidth by animateDpAsState(
+        targetValue = if (selected) 20.dp else 0.dp,
+        animationSpec = tween(durationMillis = 200),
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (selected) TextPrimary else TextMuted,
+        animationSpec = tween(durationMillis = 200),
+    )
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable(onClick = onClick),
@@ -161,13 +182,13 @@ private fun TabLabel(
             text = text,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            color = if (selected) TextPrimary else TextMuted,
+            color = textColor,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Box(
             modifier =
                 Modifier
-                    .width(if (selected) 20.dp else 0.dp)
+                    .width(indicatorWidth)
                     .height(2.dp)
                     .clip(CircleShape)
                     .background(AccentAmber),

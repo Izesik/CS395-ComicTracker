@@ -25,6 +25,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -134,56 +139,62 @@ fun SearchScreen(
             )
         }
 
-        when (val state = viewModel.uiState) {
-            is SearchUiState.Idle -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = stringResource(Res.string.search_comicvine_hint), color = TextMuted, fontSize = 14.sp)
+        AnimatedContent(
+            targetState = viewModel.uiState,
+            transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
+            modifier = Modifier.fillMaxSize(),
+        ) { state ->
+            when (state) {
+                is SearchUiState.Idle -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = stringResource(Res.string.search_comicvine_hint), color = TextMuted, fontSize = 14.sp)
+                    }
                 }
-            }
-            is SearchUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = TextPrimary)
+                is SearchUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = TextPrimary)
+                    }
                 }
-            }
-            is SearchUiState.Error -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = state.message,
-                        color = TextMuted,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-            }
-            is SearchUiState.Success -> {
-                if (state.results.isEmpty()) {
+                is SearchUiState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            text = stringResource(Res.string.no_results_found, viewModel.searchQuery),
+                            text = state.message,
                             color = TextMuted,
                             fontSize = 14.sp,
                             modifier = Modifier.padding(16.dp)
                         )
                     }
-                } else when (searchLayout) {
-                    SearchLayout.LIST -> LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(state.results) { result ->
-                            SeriesSearchCard(result, onClick = { onComicClick(result.id) })
+                }
+                is SearchUiState.Success -> {
+                    if (state.results.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = stringResource(Res.string.no_results_found, viewModel.searchQuery),
+                                color = TextMuted,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(16.dp)
+                            )
                         }
-                    }
-                    SearchLayout.GRID -> LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(state.results) { result ->
-                            SearchGridItem(result, onClick = { onComicClick(result.id) })
+                    } else when (searchLayout) {
+                        SearchLayout.LIST -> LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(state.results) { result ->
+                                SeriesSearchCard(result, onClick = { onComicClick(result.id) })
+                            }
+                        }
+                        SearchLayout.GRID -> LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(state.results) { result ->
+                                SearchGridItem(result, onClick = { onComicClick(result.id) })
+                            }
                         }
                     }
                 }

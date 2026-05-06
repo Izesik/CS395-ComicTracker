@@ -26,6 +26,12 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -92,6 +98,10 @@ fun CollectionScreen(
                 letterSpacing = (-0.5).sp,
                 modifier = Modifier.weight(1f),
             )
+            val sortTint by animateColorAsState(
+                targetValue = if (sort == CollectionSort.DATE_ADDED) TextPrimary else TextMuted,
+                animationSpec = tween(durationMillis = 200),
+            )
             IconButton(onClick = viewModel::toggleSort) {
                 Icon(
                     imageVector = Icons.Filled.SwapVert,
@@ -103,7 +113,7 @@ fun CollectionScreen(
                         } else {
                             stringResource(Res.string.sorted_by_date_added)
                         },
-                    tint = if (sort == CollectionSort.DATE_ADDED) TextPrimary else TextMuted,
+                    tint = sortTint,
                 )
             }
             IconButton(onClick = viewModel::toggleLayout) {
@@ -125,9 +135,15 @@ fun CollectionScreen(
         if (series.isEmpty()) {
             EmptyShelf()
         } else {
-            when (layout) {
-                CollectionLayout.GRID -> GridShelf(series, onSeriesClick)
-                CollectionLayout.LIST -> ListShelf(series, onSeriesClick)
+            AnimatedContent(
+                targetState = layout,
+                transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
+                modifier = Modifier.fillMaxSize(),
+            ) { currentLayout ->
+                when (currentLayout) {
+                    CollectionLayout.GRID -> GridShelf(series, onSeriesClick)
+                    CollectionLayout.LIST -> ListShelf(series, onSeriesClick)
+                }
             }
         }
     }

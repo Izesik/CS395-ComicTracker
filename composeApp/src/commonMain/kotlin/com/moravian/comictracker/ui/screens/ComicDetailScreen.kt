@@ -21,6 +21,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -353,18 +359,23 @@ private fun DetailContent(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                         }
-                        Text(
-                            when (addState) {
-                                AddCollectionState.Checking,
-                                AddCollectionState.Adding,
-                                AddCollectionState.Removing,
-                                -> stringResource(Res.string.loading)
+                        AnimatedContent(
+                            targetState = addState,
+                            transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
+                        ) { state ->
+                            Text(
+                                when (state) {
+                                    AddCollectionState.Checking,
+                                    AddCollectionState.Adding,
+                                    AddCollectionState.Removing,
+                                    -> stringResource(Res.string.loading)
 
-                                AddCollectionState.Added -> stringResource(Res.string.added_to_collection)
+                                    AddCollectionState.Added -> stringResource(Res.string.added_to_collection)
 
-                                else -> stringResource(Res.string.add_to_collection)
-                            },
-                        )
+                                    else -> stringResource(Res.string.add_to_collection)
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -589,11 +600,15 @@ private fun IssueGridCell(
             )
         }
         // IN COLLECTION banner at top
-        if (inCollection) {
+        AnimatedVisibility(
+            visible = inCollection,
+            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+        ) {
             Box(
                 modifier =
                     Modifier
-                        .align(Alignment.TopCenter)
                         .fillMaxWidth()
                         .background(
                             BadgeGreen.copy(alpha = 0.9f),
