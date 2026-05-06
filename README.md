@@ -1,6 +1,6 @@
-# ComicTracker
+# ComicShelf
 
-ComicTracker is a Kotlin Compose Multiplatform app for discovering comic series, viewing issue details, and keeping a personal comic collection. It runs on Android and iOS from a shared Compose UI, with platform-specific camera and web view integrations where needed.
+ComicShelf is a Kotlin Compose Multiplatform app for discovering comic series, viewing issue details, and keeping a personal comic collection. It runs on Android and iOS from a shared Compose UI, with platform-specific camera and web view integrations where needed.
 
 The app uses ComicVine for series, issue, cover, creator, and web-link data. Metron is used for barcode UPC lookup so scanned comics can resolve to ComicVine issue IDs.
 
@@ -78,7 +78,7 @@ From the repository root:
 ./gradlew :composeApp:installDebug
 ```
 
-Then launch ComicTracker on a connected Android device or emulator. You can also open the project in Android Studio and run the `composeApp` Android configuration.
+Then launch ComicShelf on a connected Android device or emulator. You can also open the project in Android Studio and run the `composeApp` Android configuration.
 
 ### iOS
 
