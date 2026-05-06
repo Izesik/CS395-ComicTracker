@@ -214,6 +214,7 @@ fun App(
                         onBack = { navController.popBackStack() },
                         database = database,
                         onViewOnComicVine = { navController.navigate("webview/issue/$issueId") },
+                        onSeriesClick = { seriesId -> navController.navigate("comic_detail/$seriesId") },
                     )
                 }
                 composable("barcode_scan") {

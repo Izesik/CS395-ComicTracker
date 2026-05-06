@@ -43,8 +43,10 @@ import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.network.ComicVineCharacter
 import com.moravian.comictracker.network.ComicVineIssue
+import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.network.coverUrl
 import com.moravian.comictracker.ui.components.CollectionActionButton
+import com.moravian.comictracker.ui.components.ComicListRow
 import com.moravian.comictracker.ui.components.PlatformBackButton
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailUiState
@@ -68,10 +70,12 @@ fun IssueDetailScreen(
     onBack: () -> Unit,
     database: ComicTrackerDatabase,
     onViewOnComicVine: () -> Unit = {},
+    onSeriesClick: (Int) -> Unit = {},
     viewModel: IssueDetailViewModel = viewModel(factory = IssueDetailViewModel.factory(issueId, database))
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val addState by viewModel.addState.collectAsStateWithLifecycle()
+    val seriesVolume by viewModel.seriesVolume.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize().background(ScreenBackground)) {
         when (val state = uiState) {
@@ -96,7 +100,9 @@ fun IssueDetailScreen(
                 addState = addState,
                 onAddToCollection = { viewModel.addToCollection() },
                 onRemoveFromCollection = { viewModel.removeFromCollection() },
-                onViewOnComicVine = onViewOnComicVine
+                onViewOnComicVine = onViewOnComicVine,
+                seriesVolume = seriesVolume,
+                onSeriesClick = onSeriesClick
             )
         }
     }
@@ -109,7 +115,9 @@ private fun IssueDetailContent(
     addState: AddCollectionState,
     onAddToCollection: () -> Unit,
     onRemoveFromCollection: () -> Unit,
-    onViewOnComicVine: () -> Unit
+    onViewOnComicVine: () -> Unit,
+    seriesVolume: ComicVineVolume?,
+    onSeriesClick: (Int) -> Unit
 ) {
     val imageUrl = issue.image?.coverUrl()
     val volumeName = "${issue.volume?.name ?: "Issue"} #${issue.issueNumber}"
@@ -206,6 +214,43 @@ private fun IssueDetailContent(
                         .background(ScreenBackground)
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 )
+            }
+        }
+
+        // ── From Series ───────────────────────────────────────────────────
+        val volumeRef = issue.volume
+        if (volumeRef != null) {
+            item {
+                HorizontalDivider(
+                    color = Color.White.copy(alpha = 0.12f),
+                    modifier = Modifier.background(ScreenBackground)
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(ScreenBackground)
+                        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)
+                ) {
+                    Text(
+                        text = "FROM SERIES",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IssueTextSecondary,
+                        letterSpacing = androidx.compose.ui.unit.TextUnit(
+                            1.5f, androidx.compose.ui.unit.TextUnitType.Sp
+                        ),
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                    ComicListRow(
+                        title = volumeRef.name,
+                        subtitle = seriesVolume?.publisher?.name,
+                        tertiary = seriesVolume?.startYear?.let { "Est. $it" },
+                        imageUrl = seriesVolume?.image?.coverUrl(),
+                        onClick = { onSeriesClick(volumeRef.id) },
+                        modifier = Modifier.fillMaxWidth(),
+                        imageWidth = 56.dp,
+                        imageHeight = 84.dp
+                    )
+                }
             }
         }
 

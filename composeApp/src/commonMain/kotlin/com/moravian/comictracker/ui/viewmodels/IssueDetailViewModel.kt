@@ -11,6 +11,7 @@ import com.moravian.comictracker.data.CreatorEntity
 import com.moravian.comictracker.data.SeriesEntity
 import com.moravian.comictracker.network.ComicVineApi
 import com.moravian.comictracker.network.ComicVineIssue
+import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.network.coverUrl
 import com.moravian.comictracker.network.toUserFacingNetworkMessage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,6 +58,11 @@ class IssueDetailViewModel(
     /** Current state of the add/remove collection button. */
     val addState: StateFlow<AddCollectionState> = _addState.asStateFlow()
 
+    private val _seriesVolume = MutableStateFlow<ComicVineVolume?>(null)
+
+    /** The parent series for this issue, loaded after the issue itself. */
+    val seriesVolume: StateFlow<ComicVineVolume?> = _seriesVolume.asStateFlow()
+
     init {
         loadIssue()
         checkIfInCollection()
@@ -68,6 +74,11 @@ class IssueDetailViewModel(
             try {
                 val issue = api.getIssue(issueId)
                 _uiState.value = IssueDetailUiState.Success(issue)
+                issue.volume?.id?.let { volumeId ->
+                    try {
+                        _seriesVolume.value = api.getVolume(volumeId)
+                    } catch (_: Exception) {}
+                }
             } catch (e: Exception) {
                 _uiState.value =
                     IssueDetailUiState.Error(
