@@ -60,13 +60,12 @@ import com.moravian.comictracker.data.UserPreferencesRepository
 import com.moravian.comictracker.network.ComicVineIssueSummary
 import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.network.coverUrl
+import com.moravian.comictracker.ui.components.CollectionActionButton
 import com.moravian.comictracker.ui.components.PlatformBackButton
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailUiState
 import com.moravian.comictracker.ui.viewmodels.ComicDetailViewModel
 import comictracker.composeapp.generated.resources.Res
-import comictracker.composeapp.generated.resources.add_to_collection
-import comictracker.composeapp.generated.resources.added_to_collection
 import comictracker.composeapp.generated.resources.creators_label
 import comictracker.composeapp.generated.resources.filter_all
 import comictracker.composeapp.generated.resources.filter_in_collection
@@ -74,9 +73,7 @@ import comictracker.composeapp.generated.resources.filter_not_in_collection
 import comictracker.composeapp.generated.resources.in_collection_badge
 import comictracker.composeapp.generated.resources.issues_count_label
 import comictracker.composeapp.generated.resources.issues_label
-import comictracker.composeapp.generated.resources.loading
 import comictracker.composeapp.generated.resources.no_issues_match_filter
-import comictracker.composeapp.generated.resources.remove_from_collection
 import comictracker.composeapp.generated.resources.series_type_label
 import comictracker.composeapp.generated.resources.sort_ascending_cd
 import comictracker.composeapp.generated.resources.sort_descending_cd
@@ -322,62 +319,12 @@ private fun DetailContent(
                         .background(ScreenBackground)
                         .padding(horizontal = 16.dp, vertical = 14.dp),
             ) {
-                val isLoading =
-                    addState == AddCollectionState.Checking ||
-                        addState == AddCollectionState.Adding ||
-                        addState == AddCollectionState.Removing
-                if (addState == AddCollectionState.InCollection) {
-                    Button(
-                        onClick = onRemoveFromCollection,
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFB71C1C),
-                                contentColor = Color.White,
-                            ),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(Res.string.remove_from_collection)) }
-                } else {
-                    Button(
-                        onClick = onAddToCollection,
-                        enabled = addState == AddCollectionState.Idle,
-                        colors =
-                            if (addState == AddCollectionState.Added) {
-                                ButtonDefaults.buttonColors(
-                                    disabledContainerColor = BadgeGreen,
-                                    disabledContentColor = Color.White,
-                                )
-                            } else {
-                                ButtonDefaults.buttonColors()
-                            },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.height(16.dp).width(16.dp),
-                                strokeWidth = 2.dp,
-                                color = Color.White,
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        AnimatedContent(
-                            targetState = addState,
-                            transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
-                        ) { state ->
-                            Text(
-                                when (state) {
-                                    AddCollectionState.Checking,
-                                    AddCollectionState.Adding,
-                                    AddCollectionState.Removing,
-                                    -> stringResource(Res.string.loading)
-
-                                    AddCollectionState.Added -> stringResource(Res.string.added_to_collection)
-
-                                    else -> stringResource(Res.string.add_to_collection)
-                                },
-                            )
-                        }
-                    }
-                }
+                CollectionActionButton(
+                    addState = addState,
+                    onAddToCollection = onAddToCollection,
+                    onRemoveFromCollection = onRemoveFromCollection,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 

@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -35,17 +33,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImage
-import com.moravian.comictracker.network.ComicVineIssueSummary
-import com.moravian.comictracker.network.ComicVineVolume
 import com.moravian.comictracker.network.coverUrl
+import com.moravian.comictracker.ui.components.ComicCoverGridItem
 import com.moravian.comictracker.ui.viewmodels.HomeTab
 import com.moravian.comictracker.ui.viewmodels.HomeUiState
 import com.moravian.comictracker.ui.viewmodels.HomeViewModel
@@ -54,7 +48,6 @@ import comictracker.composeapp.generated.resources.app_name
 import org.jetbrains.compose.resources.stringResource
 
 private val HomeBackground = Color(0xFF0F0F0F)
-private val CardBackground = Color(0xFF1A1A1A)
 private val TextPrimary = Color.White
 private val TextMuted = Color(0xFF777777)
 private val AccentAmber = Color(0xFFFFB300)
@@ -117,8 +110,13 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
-                        items(state.series) { series ->
-                            SeriesCard(series = series, onClick = { onVolumeClick(series.id) })
+                        items(state.series, key = { it.id }) { series ->
+                            ComicCoverGridItem(
+                                title = series.name,
+                                subtitle = series.startYear,
+                                imageUrl = series.image?.coverUrl(),
+                                onClick = { onVolumeClick(series.id) },
+                            )
                         }
                     }
                 }
@@ -131,11 +129,29 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
-                        items(state.issues) { issue ->
-                            IssueCard(
-                                issue = issue,
+                        items(state.issues, key = { it.id }) { issue ->
+                            ComicCoverGridItem(
+                                title = issue.volume?.name.orEmpty(),
+                                subtitle = issue.coverDate,
+                                imageUrl = issue.image?.coverUrl(),
                                 onClick = { onIssueClick(issue.id) },
-                            )
+                            ) {
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(4.dp)
+                                            .background(Color.Black.copy(alpha = 0.72f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 5.dp, vertical = 2.dp),
+                                ) {
+                                    Text(
+                                        text = "#${issue.issueNumber}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TextPrimary,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -193,124 +209,5 @@ private fun TabLabel(
                     .clip(CircleShape)
                     .background(AccentAmber),
         )
-    }
-}
-
-@Composable
-private fun SeriesCard(
-    series: ComicVineVolume,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(0.67f)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(CardBackground),
-            contentAlignment = Alignment.Center,
-        ) {
-            val imageUrl = series.image?.coverUrl()
-            if (imageUrl != null) {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = series.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                Text(
-                    text = series.name,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextMuted,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(6.dp),
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(5.dp))
-        Text(
-            text = series.name,
-            style = MaterialTheme.typography.labelMedium,
-            color = TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (series.startYear != null) {
-            Text(
-                text = series.startYear,
-                style = MaterialTheme.typography.labelSmall,
-                color = TextMuted,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-@Composable
-private fun IssueCard(
-    issue: ComicVineIssueSummary,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(0.67f)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(CardBackground),
-        ) {
-            AsyncImage(
-                model = issue.image?.coverUrl(),
-                contentDescription = issue.volume?.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-            // Issue number badge
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                        .background(Color.Black.copy(alpha = 0.72f), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 5.dp, vertical = 2.dp),
-            ) {
-                Text(
-                    text = "#${issue.issueNumber}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextPrimary,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(5.dp))
-        Text(
-            text = issue.volume?.name ?: "",
-            style = MaterialTheme.typography.labelMedium,
-            color = TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (issue.coverDate != null) {
-            Text(
-                text = issue.coverDate,
-                style = MaterialTheme.typography.labelSmall,
-                color = TextMuted,
-                maxLines = 1,
-            )
-        }
     }
 }

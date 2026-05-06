@@ -1,20 +1,14 @@
 package com.moravian.comictracker.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -22,10 +16,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -40,18 +34,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import com.moravian.comictracker.data.CollectionLayout
 import com.moravian.comictracker.data.CollectionSort
 import com.moravian.comictracker.data.SeriesEntity
+import com.moravian.comictracker.ui.components.ComicCoverGridItem
+import com.moravian.comictracker.ui.components.ComicListRow
 import com.moravian.comictracker.ui.viewmodels.CollectionViewModel
 import comictracker.composeapp.generated.resources.Res
 import comictracker.composeapp.generated.resources.no_comics_on_shelf
@@ -63,7 +55,6 @@ import comictracker.composeapp.generated.resources.switch_to_list_view
 import org.jetbrains.compose.resources.stringResource
 
 private val CollectionBackground = Color(0xFF0F0F0F)
-private val CardBackground = Color(0xFF1A1A1A)
 private val TextPrimary = Color.White
 private val TextMuted = Color(0xFF777777)
 
@@ -118,7 +109,7 @@ fun CollectionScreen(
             }
             IconButton(onClick = viewModel::toggleLayout) {
                 Icon(
-                    imageVector = if (layout == CollectionLayout.GRID) Icons.Filled.ViewList else Icons.Filled.GridView,
+                    imageVector = if (layout == CollectionLayout.GRID) Icons.AutoMirrored.Filled.ViewList else Icons.Filled.GridView,
                     contentDescription =
                         if (layout ==
                             CollectionLayout.GRID
@@ -161,7 +152,14 @@ private fun GridShelf(
         verticalArrangement = Arrangement.spacedBy(14.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(series) { s -> SeriesCard(s, onSeriesClick) }
+        items(series, key = { it.id }) { s ->
+            ComicCoverGridItem(
+                title = s.title,
+                subtitle = s.publisher,
+                imageUrl = s.coverImageUrl,
+                onClick = { onSeriesClick(s.comicvineId) },
+            )
+        }
     }
 }
 
@@ -175,7 +173,17 @@ private fun ListShelf(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        items(series) { s -> SeriesListRow(s, onSeriesClick) }
+        items(series, key = { it.id }) { s ->
+            ComicListRow(
+                title = s.title,
+                subtitle = s.publisher,
+                tertiary = null,
+                imageUrl = s.coverImageUrl,
+                onClick = { onSeriesClick(s.comicvineId) },
+                imageWidth = 50.dp,
+                imageHeight = 70.dp,
+            )
+        }
     }
 }
 
@@ -184,7 +192,7 @@ private fun EmptyShelf() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                imageVector = Icons.Filled.MenuBook,
+                imageVector = Icons.AutoMirrored.Filled.MenuBook,
                 contentDescription = null,
                 tint = TextMuted,
                 modifier = Modifier.padding(bottom = 12.dp),
@@ -194,116 +202,6 @@ private fun EmptyShelf() {
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextMuted,
             )
-        }
-    }
-}
-
-@Composable
-private fun SeriesCard(
-    series: SeriesEntity,
-    onSeriesClick: (Int) -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth().clickable { onSeriesClick(series.comicvineId) }) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(0.67f)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(CardBackground),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (series.coverImageUrl != null) {
-                AsyncImage(
-                    model = series.coverImageUrl,
-                    contentDescription = series.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Filled.MenuBook,
-                    contentDescription = null,
-                    tint = TextMuted,
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(5.dp))
-        Text(
-            text = series.title,
-            style = MaterialTheme.typography.labelMedium,
-            color = TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (series.publisher != null) {
-            Text(
-                text = series.publisher,
-                style = MaterialTheme.typography.labelSmall,
-                color = TextMuted,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SeriesListRow(
-    series: SeriesEntity,
-    onSeriesClick: (Int) -> Unit,
-) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable { onSeriesClick(series.comicvineId) }
-                .background(CardBackground, RoundedCornerShape(8.dp))
-                .padding(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(width = 50.dp, height = 70.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFF2A2A2A)),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (series.coverImageUrl != null) {
-                AsyncImage(
-                    model = series.coverImageUrl,
-                    contentDescription = series.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Filled.MenuBook,
-                    contentDescription = null,
-                    tint = TextMuted,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = series.title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = TextPrimary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (series.publisher != null) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = series.publisher,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextMuted,
-                    maxLines = 1,
-                )
-            }
         }
     }
 }

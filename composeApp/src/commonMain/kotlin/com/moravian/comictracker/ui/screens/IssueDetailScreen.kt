@@ -44,25 +44,22 @@ import com.moravian.comictracker.data.ComicTrackerDatabase
 import com.moravian.comictracker.network.ComicVineCharacter
 import com.moravian.comictracker.network.ComicVineIssue
 import com.moravian.comictracker.network.coverUrl
+import com.moravian.comictracker.ui.components.CollectionActionButton
 import com.moravian.comictracker.ui.components.PlatformBackButton
 import com.moravian.comictracker.ui.viewmodels.AddCollectionState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailUiState
 import com.moravian.comictracker.ui.viewmodels.IssueDetailViewModel
 import comictracker.composeapp.generated.resources.Res
-import comictracker.composeapp.generated.resources.add_to_collection
-import comictracker.composeapp.generated.resources.added_to_collection
 import comictracker.composeapp.generated.resources.characters_label
 import comictracker.composeapp.generated.resources.credits_label
 import comictracker.composeapp.generated.resources.issue_type_label
-import comictracker.composeapp.generated.resources.loading
-import comictracker.composeapp.generated.resources.remove_from_collection
 import comictracker.composeapp.generated.resources.view_on_comicvine
 import org.jetbrains.compose.resources.stringResource
 
 private val ScreenBackground = Color(0xFF0F0F0F)
 private val IssueTextPrimary = Color.White
 private val IssueTextSecondary = Color(0xFFAAAAAA)
-private val IssueBadgeGreen = Color(0xFF2E7D32)
+private val BadgeGreen = Color(0xFF2E7D32)
 
 /** Detailed view for a single comic issue, including cover art, description, credits, and characters. */
 @Composable
@@ -307,47 +304,12 @@ private fun IssueDetailContent(
                     .background(ScreenBackground)
                     .padding(horizontal = 16.dp, vertical = 14.dp)
             ) {
-                val isLoading = addState == AddCollectionState.Checking || addState == AddCollectionState.Adding || addState == AddCollectionState.Removing
-                if (addState == AddCollectionState.InCollection) {
-                    Button(
-                        onClick = onRemoveFromCollection,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFB71C1C),
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(Res.string.remove_from_collection))
-                    }
-                } else {
-                    Button(
-                        onClick = onAddToCollection,
-                        enabled = addState == AddCollectionState.Idle,
-                        colors = if (addState == AddCollectionState.Added) ButtonDefaults.buttonColors(
-                            disabledContainerColor = IssueBadgeGreen,
-                            disabledContentColor = Color.White
-                        ) else ButtonDefaults.buttonColors(),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier
-                                    .height(16.dp)
-                                    .width(16.dp),
-                                strokeWidth = 2.dp,
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Text(
-                            when (addState) {
-                                AddCollectionState.Checking, AddCollectionState.Adding, AddCollectionState.Removing -> stringResource(Res.string.loading)
-                                AddCollectionState.Added -> stringResource(Res.string.added_to_collection)
-                                else -> stringResource(Res.string.add_to_collection)
-                            }
-                        )
-                    }
-                }
+                CollectionActionButton(
+                    addState = addState,
+                    onAddToCollection = onAddToCollection,
+                    onRemoveFromCollection = onRemoveFromCollection,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 
@@ -376,7 +338,7 @@ private fun IssueDetailContent(
 private fun IssueNumberBadge(issueNumber: String) {
     Box(
         modifier = Modifier
-            .background(IssueBadgeGreen, RoundedCornerShape(6.dp))
+            .background(BadgeGreen, RoundedCornerShape(6.dp))
             .padding(horizontal = 10.dp, vertical = 3.dp),
         contentAlignment = Alignment.Center
     ) {
